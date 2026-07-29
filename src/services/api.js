@@ -1,0 +1,117 @@
+/**
+ * Centralized API client for all backend communication.
+ * Handles REST calls and SSE stream setup.
+ */
+
+import { ENDPOINTS } from '../constants/config';
+
+// ── REST API ──
+
+/**
+ * Make an authenticated API call to the backend.
+ * @param {string} baseUrl - Backend URL
+ * @param {string} apiKey - API key
+ * @param {string} path - API endpoint path
+ * @param {object} options - Fetch options (method, body, headers)
+ * @returns {Promise<object>} Parsed JSON response
+ * @throws {Error} On 401 or non-OK responses
+ */
+export async function apiCall(baseUrl, apiKey, path, options = {}) {
+  const url = `${baseUrl}${path}`;
+  const headers = {
+    'x-api-key': apiKey,
+    ...(options.headers || {}),
+  };
+  const res = await fetch(url, { ...options, headers });
+
+  if (res.status === 401) {
+    throw new Error('Invalid API key. Please check your credentials.');
+  }
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(data.error || res.statusText);
+  }
+  return res.json();
+}
+
+// ── Data Fetching ──
+
+export const fetchClients = (baseUrl, apiKey) =>
+  apiCall(baseUrl, apiKey, ENDPOINTS.clients);
+
+export const fetchStatus = (baseUrl, apiKey) =>
+  apiCall(baseUrl, apiKey, ENDPOINTS.status);
+
+export const fetchSchedule = (baseUrl, apiKey) =>
+  apiCall(baseUrl, apiKey, ENDPOINTS.schedule);
+
+export const fetchLogs = (baseUrl, apiKey, limit = 500, level = 'all') =>
+  apiCall(baseUrl, apiKey, ENDPOINTS.logsRecent(limit, level));
+
+export const fetchHealth = (baseUrl) =>
+  fetch(`${baseUrl}/health`).then((r) => r.json());
+
+// ── Actions ──
+
+export const triggerSyncAll = (baseUrl, apiKey) =>
+  apiCall(baseUrl, apiKey, ENDPOINTS.syncAll, { method: 'POST' });
+
+export const triggerSyncSingle = (baseUrl, apiKey, consultantNum) =>
+  apiCall(baseUrl, apiKey, ENDPOINTS.syncSingle(consultantNum), { method: 'POST' });
+
+export const refreshSession = (baseUrl, apiKey, consultantNum) =>
+  apiCall(baseUrl, apiKey, ENDPOINTS.refreshSession(consultantNum), { method: 'POST' });
+
+export const updateSchedule = (baseUrl, apiKey, scheduleForm) =>
+  apiCall(baseUrl, apiKey, ENDPOINTS.schedule, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(scheduleForm),
+  });
+
+export const toggleCron = (baseUrl, apiKey, enable) =>
+  apiCall(baseUrl, apiKey, enable ? ENDPOINTS.cronEnable : ENDPOINTS.cronDisable, {
+    method: 'POST',
+  });
+
+// ── File Export ──
+
+export async function downloadCsv(baseUrl, apiKey, consultantNum, clientName) {
+  const url = `${baseUrl}${ENDPOINTS.exportCsv(consultantNum)}?apiKey=${encodeURIComponent(apiKey)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Download failed');
+  const blob = await res.blob();
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `${clientName || consultantNum}_ghl_contacts.csv`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+// ── SSE Streams ──
+
+/**
+ * Create an SSE connection for live logs.
+ * @returns {{ eventSource: EventSource, close: () => void }}
+ */
+export function createLogStream(baseUrl, apiKey) {
+  const url = `${baseUrl}${ENDPOINTS.logsSse(apiKey)}`;
+  const evtSource = new EventSource(url);
+  return {
+    eventSource: evtSource,
+    close: () => evtSource.close(),
+  };
+}
+
+/**
+ * Create an SSE connection for live progress.
+ * @returns {{ eventSource: EventSource, close: () => void }}
+ */
+export function createProgressStream(baseUrl, apiKey) {
+  const url = `${baseUrl}${ENDPOINTS.progressSse(apiKey)}`;
+  const evtSource = new EventSource(url);
+  return {
+    eventSource: evtSource,
+    close: () => evtSource.close(),
+  };
+}
