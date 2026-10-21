@@ -13,8 +13,7 @@ import { useHistory } from './hooks/useHistory';
 // ── Services ──
 import {
   refreshSession,
-  downloadMaryKayCsv,
-  downloadAllMaryKayCsv,
+  downloadCsv,
 } from './services/api';
 
 // ── Constants ──
@@ -41,7 +40,6 @@ import LogsTab from './components/logs/LogsTab';
  */
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [isExportingAllCsv, setIsExportingAllCsv] = useState(false);
   const [exportingClientNum, setExportingClientNum] = useState(null);
 
   const connection = useConnection();
@@ -111,18 +109,18 @@ export default function App() {
     async (num, name) => {
       setExportingClientNum(num);
       try {
-        await downloadMaryKayCsv(connection.backendUrl, connection.apiKey, num, name);
+        await downloadCsv(connection.backendUrl, connection.apiKey, num, name);
         appendLog({
           timestamp: new Date().toISOString(),
           level: 'info',
-          message: `Mary Kay CSV export completed for ${name || num}; no GHL upload was performed.`,
+          message: `Client CSV export completed for ${name || num}; no GHL upload was performed.`,
           consultantNum: num,
         });
       } catch (error) {
         appendLog({
           timestamp: new Date().toISOString(),
           level: 'error',
-          message: `Mary Kay CSV download failed for ${name || num}: ${error.message}`,
+          message: `Client CSV download failed for ${name || num}: ${error.message}`,
           consultantNum: num,
         });
       } finally {
@@ -153,26 +151,6 @@ export default function App() {
     },
     [connection.backendUrl, connection.apiKey, appendLog]
   );
-
-  const handleExportAllCsv = useCallback(async () => {
-    setIsExportingAllCsv(true);
-    try {
-      await downloadAllMaryKayCsv(connection.backendUrl, connection.apiKey);
-      appendLog({
-        timestamp: new Date().toISOString(),
-        level: 'info',
-        message: 'Complete Mary Kay CSV export downloaded without a GHL upload.',
-      });
-    } catch (error) {
-      appendLog({
-        timestamp: new Date().toISOString(),
-        level: 'error',
-        message: `Complete Mary Kay CSV export failed: ${error.message}`,
-      });
-    } finally {
-      setIsExportingAllCsv(false);
-    }
-  }, [connection.backendUrl, connection.apiKey, appendLog]);
 
   return (
     <div style={pageStyle}>
@@ -233,8 +211,6 @@ export default function App() {
             syncError={sync.syncError}
             totalErrors={sync.totalErrors}
             onSyncAll={handleSyncAll}
-            onExportAllCsv={handleExportAllCsv}
-            isExportingAllCsv={isExportingAllCsv}
             onSyncSingle={handleSyncSingle}
             onCsv={handleCsv}
             exportingClientNum={exportingClientNum}

@@ -91,7 +91,7 @@ export default function ClientRow({
         <button
           onClick={() => onCsv(client.consultantNum, client.clientName)}
           disabled={Boolean(exportingClientNum)}
-          title="Download this client's Mary Kay records without uploading to GoHighLevel"
+          title="Download this client's GHL-ready CSV without uploading to GoHighLevel"
           style={{
             padding: '6px 12px',
             borderRadius: '6px',
@@ -103,7 +103,7 @@ export default function ClientRow({
             opacity: exportingClientNum ? 0.55 : 1,
           }}
         >
-          {exportingClientNum === client.consultantNum ? 'Preparing…' : 'Mary Kay CSV'}
+          {exportingClientNum === client.consultantNum ? 'Preparing…' : 'CSV (no upload)'}
         </button>
         <button
           onClick={() => onRefresh(client.consultantNum)}

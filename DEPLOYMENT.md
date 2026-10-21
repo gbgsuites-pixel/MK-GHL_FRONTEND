@@ -88,8 +88,7 @@ silently showing an empty client list.
 1. **Connection Settings** — Enter backend URL and API key (saved to browser localStorage)
 2. **Client List** — Shows all configured clients with their GHL location IDs
 3. **Sync Controls** — "Sync All" or per-client "Sync" buttons
-4. **Per-client Mary Kay CSV** — Download one client's collected Mary Kay records without uploading them to GHL
-5. **Complete Mary Kay CSV** — Download all records collected from Mary Kay without uploading them to GHL
+4. **Per-client CSV** — Download one client's GHL-ready contacts without uploading them to GHL
 6. **Session Refresh** — Force-refresh a stale browser session
 7. **Live Logs** — Real-time log stream via Server-Sent Events (SSE)
 8. **Log Filters** — Filter by INFO, WARN, ERROR, or show ALL
@@ -115,8 +114,7 @@ The frontend communicates with the backend via:
 - `GET /api/logs` — SSE stream for live logs
 - `GET /api/logs/recent` — Fetch recent logs as JSON
 - `GET /api/clients` — List configured clients
-- `GET /api/export/mary-kay-csv/:num` — Download one client's complete Mary Kay record set as CSV without starting a GHL upload
-- `GET /api/export/mary-kay-csv/all` — Download the complete Mary Kay record set as CSV without starting a GHL upload
+- `GET /api/export/ghl-csv/:num` — Download one client's GHL-ready contacts as CSV without starting a GHL upload
 
 ---
 
@@ -136,15 +134,15 @@ pnpm dev
 
 The frontend connects to `http://localhost:3000` by default.
 
-## Mary Kay CSV export endpoints
+## Per-client CSV export
 
-The Clients tab includes **Mary Kay CSV** on every client row and a portfolio-level **Mary Kay CSV** button. The per-client action must call `GET /api/export/mary-kay-csv/:num`; the portfolio action must call `GET /api/export/mary-kay-csv/all`. Both routes should read the normalized Mary Kay dataset collected by the integration, serialize it to CSV, and return it as a download. Neither route may call the GoHighLevel upload service, mutate GHL records, or start a sync job.
+The Clients tab includes **CSV (no upload)** on every client row. It calls the backend's existing `GET /api/export/ghl-csv/:num` route. The backend fetches and processes that one client's records and returns the GHL-ready CSV; it does not call the GoHighLevel upload service or start a sync job. The current backend does not expose an all-client CSV route, so the frontend does not show a broken portfolio export button.
 
 The route should require the same `x-api-key` authentication as the other REST endpoints and respond with:
 
 ```http
 Content-Type: text/csv; charset=utf-8
-Content-Disposition: attachment; filename="mary-kay-records-CLIENT-YYYY-MM-DD.csv"
+Content-Disposition: attachment; filename="CONSULTANT_ghl_contacts.csv"
 ```
 
-For a per-client export, filter by the requested consultant/client number before serializing. If the backend only keeps records in memory, the export is limited to records available in the current server process. For a complete historical export, persist the normalized Mary Kay records in a server-side store or durable export cache before the GHL upload step. Include a stable record identifier and the source consultant/client number in the CSV so duplicate rows can be traced without relying on the GHL result.
+The route filters by the requested consultant/client number before serializing. It is a download-only diagnostic/export route; it is separate from `POST /api/sync/:consultantNum` and the GHL upload code.

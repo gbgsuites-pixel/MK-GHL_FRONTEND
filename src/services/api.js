@@ -133,27 +133,14 @@ export const toggleCron = (baseUrl, apiKey, enable) =>
 
 // ── File Export ──
 
+/**
+ * Download one client's GHL-ready CSV from the backend's existing export
+ * route. This route only fetches/processes data and returns a file; it does
+ * not call the GHL upload function or start a sync job.
+ */
 export async function downloadCsv(baseUrl, apiKey, consultantNum, clientName) {
   const url = `${baseUrl}${ENDPOINTS.exportCsv(consultantNum)}?apiKey=${encodeURIComponent(apiKey)}`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error('Download failed');
-  const blob = await res.blob();
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `${clientName || consultantNum}_ghl_contacts.csv`;
-  link.click();
-  URL.revokeObjectURL(link.href);
-}
-
-/**
- * Download one client's raw Mary Kay records without starting a sync or
- * calling the GoHighLevel upload service.
- */
-export async function downloadMaryKayCsv(baseUrl, apiKey, consultantNum, clientName) {
-  const url = `${baseUrl}${ENDPOINTS.exportMaryKayCsv(consultantNum)}`;
-  const res = await fetch(url, {
-    headers: { 'x-api-key': apiKey },
-  });
 
   if (!res.ok) {
     const contentType = res.headers.get('content-type') || '';
@@ -162,9 +149,9 @@ export async function downloadMaryKayCsv(baseUrl, apiKey, consultantNum, clientN
       : await res.text().catch(() => '');
     const message =
       (typeof data === 'object' && (data.error || data.message)) ||
-      (typeof data === 'string' && data) ||
+      (typeof data === 'string' && data.replace(/\s+/g, ' ').slice(0, 300)) ||
       res.statusText ||
-      `Mary Kay CSV export failed with HTTP ${res.status}.`;
+      `CSV download failed with HTTP ${res.status}.`;
     throw new Error(message);
   }
 
@@ -173,44 +160,7 @@ export async function downloadMaryKayCsv(baseUrl, apiKey, consultantNum, clientN
   const filenameMatch = disposition.match(/filename\*?=(?:UTF-8''|")?([^;\"]+)/i);
   const filename = filenameMatch?.[1]
     ? decodeURIComponent(filenameMatch[1].trim())
-    : `${clientName || consultantNum}-mary-kay-records-${new Date().toISOString().slice(0, 10)}.csv`;
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(link.href);
-}
-
-/**
- * Download every Mary Kay record collected by the backend without starting
- * or using a GoHighLevel upload. The server should stream a CSV response from
- * ENDPOINTS.exportMaryKayCsvAll.
- */
-export async function downloadAllMaryKayCsv(baseUrl, apiKey) {
-  const url = `${baseUrl}${ENDPOINTS.exportMaryKayCsvAll}`;
-  const res = await fetch(url, {
-    headers: { 'x-api-key': apiKey },
-  });
-
-  if (!res.ok) {
-    const contentType = res.headers.get('content-type') || '';
-    const data = contentType.includes('application/json')
-      ? await res.json().catch(() => ({}))
-      : await res.text().catch(() => '');
-    const message =
-      (typeof data === 'object' && (data.error || data.message)) ||
-      (typeof data === 'string' && data) ||
-      res.statusText ||
-      `Mary Kay CSV export failed with HTTP ${res.status}.`;
-    throw new Error(message);
-  }
-
-  const blob = await res.blob();
-  const disposition = res.headers.get('content-disposition') || '';
-  const filenameMatch = disposition.match(/filename\*?=(?:UTF-8''|\")?([^;\"]+)/i);
-  const filename = filenameMatch?.[1]
-    ? decodeURIComponent(filenameMatch[1].trim())
-    : `mary-kay-records-${new Date().toISOString().slice(0, 10)}.csv`;
+    : `${clientName || consultantNum}_ghl_contacts.csv`;
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
   link.download = filename;

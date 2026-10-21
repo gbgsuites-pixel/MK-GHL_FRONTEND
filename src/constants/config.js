@@ -32,8 +32,6 @@ export const ENDPOINTS = {
 
   // Export
   exportCsv: (num) => `/api/export/ghl-csv/${encodeURIComponent(num)}`,
-  exportMaryKayCsv: (num) => `/api/export/mary-kay-csv/${encodeURIComponent(num)}`,
-  exportMaryKayCsvAll: '/api/export/mary-kay-csv/all',
 
   // Schedule
   schedule: '/api/schedule',
