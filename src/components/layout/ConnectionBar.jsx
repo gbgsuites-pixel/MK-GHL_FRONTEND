@@ -34,7 +34,8 @@ export default function ConnectionBar({
           type="text"
           value={backendUrl}
           onChange={(e) => setBackendUrl(e.target.value)}
-          placeholder="https://your-render-app.onrender.com"
+          placeholder="https://your-service.onrender.com"
+          aria-label="Backend URL"
           style={inputStyle}
         />
       </div>
@@ -45,14 +46,24 @@ export default function ConnectionBar({
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
           placeholder="my-local-test-key"
+          aria-label="Backend API key"
           style={inputStyle}
         />
       </div>
-      <button onClick={onConnect} disabled={!apiKey} style={btnPrimary}>
+      <button
+        onClick={onConnect}
+        disabled={!apiKey || !backendUrl || isConnecting}
+        style={{ ...btnPrimary, opacity: !apiKey || !backendUrl || isConnecting ? 0.55 : 1 }}
+      >
         {isConnecting ? 'Connecting...' : 'Connect'}
       </button>
       {connectionError && (
         <p style={connectionErrorStyle}>{connectionError}</p>
+      )}
+      {!connectionError && !backendUrl && (
+        <p style={connectionErrorStyle}>
+          Production backend URL is not configured. Add <code>VITE_BACKEND_URL</code> in Vercel or enter it here.
+        </p>
       )}
     </div>
   );

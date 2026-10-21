@@ -5,6 +5,26 @@
 
 import { ENDPOINTS } from '../constants/config';
 
+function cleanBaseUrl(baseUrl) {
+  return String(baseUrl || '').trim().replace(/\/+$/, '');
+}
+
+function responseErrorMessage(data, res) {
+  if (typeof data === 'object' && data) {
+    return data.error || data.message || data.detail || '';
+  }
+
+  if (typeof data === 'string' && data) {
+    const compact = data.replace(/\s+/g, ' ').trim();
+    // Render and proxy failures often return a full HTML error page. Do not
+    // place the entire page in the dashboard error panel.
+    if (/<html|<!doctype/i.test(compact)) return '';
+    return compact.slice(0, 500);
+  }
+
+  return '';
+}
+
 // ── REST API ──
 
 /**
@@ -17,12 +37,26 @@ import { ENDPOINTS } from '../constants/config';
  * @throws {Error} On 401 or non-OK responses
  */
 export async function apiCall(baseUrl, apiKey, path, options = {}) {
-  const url = `${baseUrl}${path}`;
+  const normalizedBaseUrl = cleanBaseUrl(baseUrl);
+  if (!normalizedBaseUrl) {
+    throw new Error('Backend URL is not configured. Set VITE_BACKEND_URL or enter the backend URL.');
+  }
+
+  const url = `${normalizedBaseUrl}${path}`;
   const headers = {
     'x-api-key': apiKey,
     ...(options.headers || {}),
   };
-  const res = await fetch(url, { ...options, headers });
+  let res;
+  try {
+    res = await fetch(url, { ...options, headers });
+  } catch (error) {
+    const networkError = new Error(
+      `Cannot reach backend at ${normalizedBaseUrl}. The service may be offline, the URL may be wrong, or CORS may be blocking the request.`
+    );
+    networkError.cause = error;
+    throw networkError;
+  }
 
   const contentType = res.headers.get('content-type') || '';
   const data = contentType.includes('application/json')
@@ -35,10 +69,12 @@ export async function apiCall(baseUrl, apiKey, path, options = {}) {
     }
 
     const message =
-      (typeof data === 'object' && (data.error || data.message || data.detail)) ||
-      (typeof data === 'string' && data) ||
-      res.statusText ||
-      `Request failed with HTTP ${res.status}.`;
+      responseErrorMessage(data, res) ||
+      (res.status === 502
+        ? 'Backend returned HTTP 502 Bad Gateway. Check the Render service logs and deployment status.'
+        : res.status === 503
+        ? 'Backend returned HTTP 503 Service Unavailable. The Render service may be stopped or still starting.'
+        : res.statusText || `Request failed with HTTP ${res.status}.`);
     const error = new Error(message);
     error.status = res.status;
     error.payload = data;

@@ -60,6 +60,27 @@ vercel env add VITE_API_KEY production
 
 These can also be set directly in the UI (Settings > Environment Variables).
 
+After changing either variable, trigger a new Vercel deployment. Vite embeds
+`VITE_BACKEND_URL` and `VITE_API_KEY` at build time; changing the Vercel
+environment variable without rebuilding does not update an already deployed
+bundle. The frontend deliberately does not fall back to `localhost:3000` in a
+production build. A stale localhost value saved in browser localStorage is
+also ignored in production.
+
+The Render URL must be reachable directly from the public internet. Verify it
+before troubleshooting the frontend:
+
+```bash
+curl -i https://your-render-app.onrender.com/health
+```
+
+Expected result is a 2xx response from the backend. A Render `502 Bad
+Gateway`, `503 Service Unavailable`, timeout, or connection reset is a backend
+deployment/service problem, not a React connection-form problem. Check the
+Render service status, start command, port binding (`process.env.PORT`), and
+deployment logs first. The frontend now displays these conditions instead of
+silently showing an empty client list.
+
 ---
 
 ## Frontend Features

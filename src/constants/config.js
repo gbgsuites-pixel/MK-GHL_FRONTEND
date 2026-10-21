@@ -3,7 +3,17 @@
  * All API endpoints and default values are defined here.
  */
 
-export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+export function normalizeBackendUrl(value) {
+  return String(value || '').trim().replace(/\/+$/, '');
+}
+
+const configuredBackendUrl = normalizeBackendUrl(import.meta.env.VITE_BACKEND_URL);
+
+// Localhost is useful for `npm run dev`, but it is never a valid default for
+// a Vercel/production build. An empty production default forces the deployment
+// to provide VITE_BACKEND_URL instead of silently calling the frontend host.
+export const BACKEND_URL =
+  configuredBackendUrl || (import.meta.env.DEV ? 'http://localhost:3000' : '');
 export const DEFAULT_API_KEY = import.meta.env.VITE_API_KEY || '';
 
 // ── API Endpoints ──
