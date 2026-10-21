@@ -13,7 +13,7 @@ import { useHistory } from './hooks/useHistory';
 // ── Services ──
 import {
   refreshSession,
-  downloadCsv,
+  downloadMaryKayCsv,
   downloadAllMaryKayCsv,
 } from './services/api';
 
@@ -42,6 +42,7 @@ import LogsTab from './components/logs/LogsTab';
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isExportingAllCsv, setIsExportingAllCsv] = useState(false);
+  const [exportingClientNum, setExportingClientNum] = useState(null);
 
   const connection = useConnection();
   const sync = useSync(connection.backendUrl, connection.apiKey);
@@ -108,21 +109,24 @@ export default function App() {
 
   const handleCsv = useCallback(
     async (num, name) => {
+      setExportingClientNum(num);
       try {
-        await downloadCsv(connection.backendUrl, connection.apiKey, num, name);
+        await downloadMaryKayCsv(connection.backendUrl, connection.apiKey, num, name);
         appendLog({
           timestamp: new Date().toISOString(),
           level: 'info',
-          message: `CSV export completed for ${name || num}.`,
+          message: `Mary Kay CSV export completed for ${name || num}; no GHL upload was performed.`,
           consultantNum: num,
         });
       } catch (error) {
         appendLog({
           timestamp: new Date().toISOString(),
           level: 'error',
-          message: `CSV download failed for ${name || num}: ${error.message}`,
+          message: `Mary Kay CSV download failed for ${name || num}: ${error.message}`,
           consultantNum: num,
         });
+      } finally {
+        setExportingClientNum(null);
       }
     },
     [connection.backendUrl, connection.apiKey, appendLog]
@@ -233,6 +237,7 @@ export default function App() {
             isExportingAllCsv={isExportingAllCsv}
             onSyncSingle={handleSyncSingle}
             onCsv={handleCsv}
+            exportingClientNum={exportingClientNum}
             onRefresh={handleRefresh}
             getClientErrors={sync.getClientErrors}
           />

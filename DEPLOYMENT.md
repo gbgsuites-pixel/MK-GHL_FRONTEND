@@ -67,7 +67,7 @@ These can also be set directly in the UI (Settings > Environment Variables).
 1. **Connection Settings** — Enter backend URL and API key (saved to browser localStorage)
 2. **Client List** — Shows all configured clients with their GHL location IDs
 3. **Sync Controls** — "Sync All" or per-client "Sync" buttons
-4. **CSV Download** — Download GHL-ready contacts for any client
+4. **Per-client Mary Kay CSV** — Download one client's collected Mary Kay records without uploading them to GHL
 5. **Complete Mary Kay CSV** — Download all records collected from Mary Kay without uploading them to GHL
 6. **Session Refresh** — Force-refresh a stale browser session
 7. **Live Logs** — Real-time log stream via Server-Sent Events (SSE)
@@ -94,7 +94,7 @@ The frontend communicates with the backend via:
 - `GET /api/logs` — SSE stream for live logs
 - `GET /api/logs/recent` — Fetch recent logs as JSON
 - `GET /api/clients` — List configured clients
-- `GET /api/export/ghl-csv/:num` — Download CSV
+- `GET /api/export/mary-kay-csv/:num` — Download one client's complete Mary Kay record set as CSV without starting a GHL upload
 - `GET /api/export/mary-kay-csv/all` — Download the complete Mary Kay record set as CSV without starting a GHL upload
 
 ---
@@ -115,15 +115,15 @@ pnpm dev
 
 The frontend connects to `http://localhost:3000` by default.
 
-## Complete Mary Kay CSV endpoint
+## Mary Kay CSV export endpoints
 
-The Clients tab includes **Mary Kay CSV**. This action must be backed by `GET /api/export/mary-kay-csv/all` in the sync server. The route should read the complete Mary Kay dataset collected by the integration, serialize every record to one CSV file, and return it as a download. It must not call the GoHighLevel upload service, mutate GHL records, or start a sync job.
+The Clients tab includes **Mary Kay CSV** on every client row and a portfolio-level **Mary Kay CSV** button. The per-client action must call `GET /api/export/mary-kay-csv/:num`; the portfolio action must call `GET /api/export/mary-kay-csv/all`. Both routes should read the normalized Mary Kay dataset collected by the integration, serialize it to CSV, and return it as a download. Neither route may call the GoHighLevel upload service, mutate GHL records, or start a sync job.
 
 The route should require the same `x-api-key` authentication as the other REST endpoints and respond with:
 
 ```http
 Content-Type: text/csv; charset=utf-8
-Content-Disposition: attachment; filename="mary-kay-records-YYYY-MM-DD.csv"
+Content-Disposition: attachment; filename="mary-kay-records-CLIENT-YYYY-MM-DD.csv"
 ```
 
-If the backend only keeps records in memory, the export is limited to the records available in the current server process. For a complete historical export, persist the normalized Mary Kay records in a server-side store or durable export cache before the GHL upload step. Include a stable record identifier and the source consultant/client number in the CSV so duplicate rows can be traced without relying on the GHL result.
+For a per-client export, filter by the requested consultant/client number before serializing. If the backend only keeps records in memory, the export is limited to records available in the current server process. For a complete historical export, persist the normalized Mary Kay records in a server-side store or durable export cache before the GHL upload step. Include a stable record identifier and the source consultant/client number in the CSV so duplicate rows can be traced without relying on the GHL result.

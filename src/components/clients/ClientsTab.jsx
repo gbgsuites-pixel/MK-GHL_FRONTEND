@@ -18,6 +18,7 @@ export default function ClientsTab({
   isExportingAllCsv,
   onSyncSingle,
   onCsv,
+  exportingClientNum,
   onRefresh,
   getClientErrors,
 }) {
@@ -114,6 +115,7 @@ export default function ClientsTab({
               clientStatus={clientStatus}
               isSyncing={isSyncing}
               activeClientNum={activeClientNum}
+              exportingClientNum={exportingClientNum}
               onSync={onSyncSingle}
               onCsv={onCsv}
               onRefresh={onRefresh}

@@ -11,6 +11,7 @@ export default function ClientRow({
   clientStatus,
   isSyncing,
   activeClientNum,
+  exportingClientNum,
   onSync,
   onCsv,
   onRefresh,
@@ -89,6 +90,8 @@ export default function ClientRow({
         </button>
         <button
           onClick={() => onCsv(client.consultantNum, client.clientName)}
+          disabled={Boolean(exportingClientNum)}
+          title="Download this client's Mary Kay records without uploading to GoHighLevel"
           style={{
             padding: '6px 12px',
             borderRadius: '6px',
@@ -97,9 +100,10 @@ export default function ClientRow({
             border: '1px solid #e2e8f0',
             cursor: 'pointer',
             fontSize: '11px',
+            opacity: exportingClientNum ? 0.55 : 1,
           }}
         >
-          CSV
+          {exportingClientNum === client.consultantNum ? 'Preparing…' : 'Mary Kay CSV'}
         </button>
         <button
           onClick={() => onRefresh(client.consultantNum)}
