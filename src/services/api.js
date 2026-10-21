@@ -109,6 +109,43 @@ export async function downloadCsv(baseUrl, apiKey, consultantNum, clientName) {
   URL.revokeObjectURL(link.href);
 }
 
+/**
+ * Download every Mary Kay record collected by the backend without starting
+ * or using a GoHighLevel upload. The server should stream a CSV response from
+ * ENDPOINTS.exportMaryKayCsvAll.
+ */
+export async function downloadAllMaryKayCsv(baseUrl, apiKey) {
+  const url = `${baseUrl}${ENDPOINTS.exportMaryKayCsvAll}`;
+  const res = await fetch(url, {
+    headers: { 'x-api-key': apiKey },
+  });
+
+  if (!res.ok) {
+    const contentType = res.headers.get('content-type') || '';
+    const data = contentType.includes('application/json')
+      ? await res.json().catch(() => ({}))
+      : await res.text().catch(() => '');
+    const message =
+      (typeof data === 'object' && (data.error || data.message)) ||
+      (typeof data === 'string' && data) ||
+      res.statusText ||
+      `Mary Kay CSV export failed with HTTP ${res.status}.`;
+    throw new Error(message);
+  }
+
+  const blob = await res.blob();
+  const disposition = res.headers.get('content-disposition') || '';
+  const filenameMatch = disposition.match(/filename\*?=(?:UTF-8''|\")?([^;\"]+)/i);
+  const filename = filenameMatch?.[1]
+    ? decodeURIComponent(filenameMatch[1].trim())
+    : `mary-kay-records-${new Date().toISOString().slice(0, 10)}.csv`;
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
 // ── SSE Streams ──
 
 /**

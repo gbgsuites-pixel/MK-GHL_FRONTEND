@@ -14,6 +14,8 @@ export default function ClientsTab({
   syncError,
   totalErrors,
   onSyncAll,
+  onExportAllCsv,
+  isExportingAllCsv,
   onSyncSingle,
   onCsv,
   onRefresh,
@@ -48,24 +50,48 @@ export default function ClientsTab({
         <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: '#1e293b' }}>
           All Clients ({clients.length})
         </h3>
-        <button
-          onClick={onSyncAll}
-          disabled={isSyncing || clients.length === 0}
-          style={{
-            padding: '8px 16px',
-            borderRadius: '8px',
-            backgroundColor: isSyncing ? '#94a3b8' : '#16a34a',
-            color: 'white',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: '12px',
-            fontWeight: 600,
-            opacity: isSyncing || clients.length === 0 ? 0.5 : 1,
-          }}
-        >
-          {isSyncing ? 'Running...' : 'Sync All'}
-        </button>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <button
+            onClick={onExportAllCsv}
+            disabled={isSyncing || isExportingAllCsv || clients.length === 0}
+            title="Download all Mary Kay records as CSV without uploading to GoHighLevel"
+            style={{
+              padding: '8px 12px',
+              borderRadius: '8px',
+              backgroundColor: '#eff6ff',
+              color: '#1d4ed8',
+              border: '1px solid #bfdbfe',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: 600,
+              opacity: isSyncing || isExportingAllCsv || clients.length === 0 ? 0.5 : 1,
+            }}
+          >
+            {isExportingAllCsv ? 'Preparing CSV…' : 'Mary Kay CSV'}
+          </button>
+          <button
+            onClick={onSyncAll}
+            disabled={isSyncing || clients.length === 0}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '8px',
+              backgroundColor: isSyncing ? '#94a3b8' : '#16a34a',
+              color: 'white',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: 600,
+              opacity: isSyncing || clients.length === 0 ? 0.5 : 1,
+            }}
+          >
+            {isSyncing ? 'Running...' : 'Sync All'}
+          </button>
+        </div>
       </div>
+
+      <p style={{ margin: '-6px 0 14px', color: '#64748b', fontSize: '11px' }}>
+        Mary Kay CSV downloads the complete collected record set without sending anything to GoHighLevel.
+      </p>
 
       {clients.length === 0 && (
         <p style={emptyStateStyle}>

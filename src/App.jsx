@@ -11,7 +11,11 @@ import { useMemory } from './hooks/useMemory';
 import { useHistory } from './hooks/useHistory';
 
 // ── Services ──
-import { refreshSession, downloadCsv } from './services/api';
+import {
+  refreshSession,
+  downloadCsv,
+  downloadAllMaryKayCsv,
+} from './services/api';
 
 // ── Constants ──
 import { DEFAULTS } from './constants/config';
@@ -37,6 +41,7 @@ import LogsTab from './components/logs/LogsTab';
  */
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [isExportingAllCsv, setIsExportingAllCsv] = useState(false);
 
   const connection = useConnection();
   const sync = useSync(connection.backendUrl, connection.apiKey);
@@ -145,6 +150,26 @@ export default function App() {
     [connection.backendUrl, connection.apiKey, appendLog]
   );
 
+  const handleExportAllCsv = useCallback(async () => {
+    setIsExportingAllCsv(true);
+    try {
+      await downloadAllMaryKayCsv(connection.backendUrl, connection.apiKey);
+      appendLog({
+        timestamp: new Date().toISOString(),
+        level: 'info',
+        message: 'Complete Mary Kay CSV export downloaded without a GHL upload.',
+      });
+    } catch (error) {
+      appendLog({
+        timestamp: new Date().toISOString(),
+        level: 'error',
+        message: `Complete Mary Kay CSV export failed: ${error.message}`,
+      });
+    } finally {
+      setIsExportingAllCsv(false);
+    }
+  }, [connection.backendUrl, connection.apiKey, appendLog]);
+
   return (
     <div style={pageStyle}>
       <style>{globalStyles}</style>
@@ -204,6 +229,8 @@ export default function App() {
             syncError={sync.syncError}
             totalErrors={sync.totalErrors}
             onSyncAll={handleSyncAll}
+            onExportAllCsv={handleExportAllCsv}
+            isExportingAllCsv={isExportingAllCsv}
             onSyncSingle={handleSyncSingle}
             onCsv={handleCsv}
             onRefresh={handleRefresh}
