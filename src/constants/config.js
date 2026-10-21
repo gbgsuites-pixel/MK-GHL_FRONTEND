@@ -15,13 +15,13 @@ export const ENDPOINTS = {
 
   // Sync
   syncAll: '/api/sync/all',
-  syncSingle: (num) => `/api/sync/${num}`,
+  syncSingle: (num) => `/api/sync/${encodeURIComponent(num)}`,
 
   // Sessions
-  refreshSession: (num) => `/api/sessions/refresh/${num}`,
+  refreshSession: (num) => `/api/sessions/refresh/${encodeURIComponent(num)}`,
 
   // Export
-  exportCsv: (num) => `/api/export/ghl-csv/${num}`,
+  exportCsv: (num) => `/api/export/ghl-csv/${encodeURIComponent(num)}`,
 
   // Schedule
   schedule: '/api/schedule',

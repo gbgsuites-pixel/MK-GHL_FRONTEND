@@ -2,12 +2,19 @@ import React from 'react';
 import { cardStyle } from '../../styles/theme';
 import { CLIENT_BORDER_COLORS } from '../../constants/statusColors';
 import StatusBadge from '../shared/StatusBadge';
+import { getClientStats, getClientStatus } from '../../utils/syncResult';
 
 /**
  * Client overview grid on the dashboard.
  * Shows all clients in a responsive grid with status and quick sync button.
  */
-export default function ClientGrid({ clients, syncStatus, isSyncing, onSyncSingle }) {
+export default function ClientGrid({
+  clients,
+  syncStatus,
+  isSyncing,
+  activeClientNum,
+  onSyncSingle,
+}) {
   return (
     <div style={cardStyle}>
       <div
@@ -34,10 +41,12 @@ export default function ClientGrid({ clients, syncStatus, isSyncing, onSyncSingl
       >
         {clients.map((client) => {
           const clientStatus = syncStatus?.clients?.find(
-            (c) => c.name === client.clientName
+            (c) => c.name === client.clientName || c.clientName === client.clientName || c.consultantNum === client.consultantNum
           );
+          const status = getClientStatus(clientStatus);
+          const stats = getClientStats(clientStatus);
           const borderColor =
-            CLIENT_BORDER_COLORS[clientStatus?.status] ||
+            CLIENT_BORDER_COLORS[status] ||
             CLIENT_BORDER_COLORS.idle;
 
           return (
@@ -64,10 +73,11 @@ export default function ClientGrid({ clients, syncStatus, isSyncing, onSyncSingl
                   alignItems: 'center',
                 }}
               >
-                <StatusBadge status={clientStatus?.status || 'idle'} />
+                <StatusBadge status={status} />
                 <button
                   onClick={() => onSyncSingle(client.consultantNum)}
                   disabled={isSyncing}
+                  title="Sync only this client"
                   style={{
                     padding: '3px 8px',
                     borderRadius: '4px',
@@ -79,19 +89,22 @@ export default function ClientGrid({ clients, syncStatus, isSyncing, onSyncSingl
                     fontWeight: 600,
                   }}
                 >
-                  Sync
+                  {isSyncing && activeClientNum === client.consultantNum
+                    ? 'Syncing…'
+                    : 'Sync only'}
                 </button>
               </div>
               {clientStatus?.stats && (
                 <div style={{ marginTop: '6px', fontSize: '10px', color: '#64748b' }}>
                   <span>
-                    {clientStatus.stats.mergedContacts ||
-                      clientStatus.stats.total ||
-                      0}{' '}
+                    {stats.mergedContacts}{' '}
                     contacts
                   </span>
-                  {clientStatus.stats.ghlSynced !== undefined && (
-                    <span> &middot; {clientStatus.stats.ghlSynced} synced</span>
+                  {stats.ghlSynced !== undefined && (
+                    <span> &middot; {stats.ghlSynced} synced</span>
+                  )}
+                  {stats.ghlErrors > 0 && (
+                    <span style={{ color: '#dc2626' }}> &middot; {stats.ghlErrors} errors</span>
                   )}
                 </div>
               )}

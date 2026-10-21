@@ -1,20 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 /**
  * Expandable error panel grouped by client.
- * Shows contact name, email/phone, status code, and retry attempts.
+ * Shows contact details when available and also supports service-level upload
+ * failures that do not have a contact attached.
  */
 export default function ErrorPanel({ clients, getClientErrors, totalErrors }) {
-  const clientsWithErrors = clients.filter(
-    (c) => (getClientErrors(c.name)?.length || 0) > 0
-  );
+  const [expanded, setExpanded] = useState({});
+  const clientsWithErrors = clients
+    .map((client) => ({ client, errors: getClientErrors(client.name || client.clientName) }))
+    .filter(({ errors }) => errors.length > 0);
 
   if (clientsWithErrors.length === 0) return null;
 
-  const [expanded, setExpanded] = React.useState({});
-
   const toggleExpand = (name) =>
-    setExpanded((prev) => ({ ...prev, [name]: !prev[name] }));
+    setExpanded((previous) => ({ ...previous, [name]: !previous[name] }));
 
   return (
     <div style={{ marginTop: '20px' }}>
@@ -26,15 +26,15 @@ export default function ErrorPanel({ clients, getClientErrors, totalErrors }) {
           color: '#dc2626',
         }}
       >
-        ⚠️ Sync Errors ({totalErrors})
+        ⚠️ Sync and upload errors ({totalErrors})
       </h4>
-      {clientsWithErrors.map((client) => {
-        const errors = getClientErrors(client.name);
-        const isExpanded = expanded[client.name];
+      {clientsWithErrors.map(({ client, errors }) => {
+        const name = client.name || client.clientName || 'Unknown client';
+        const isExpanded = expanded[name];
 
         return (
           <div
-            key={client.name}
+            key={name}
             style={{
               marginBottom: '10px',
               borderRadius: '8px',
@@ -42,33 +42,35 @@ export default function ErrorPanel({ clients, getClientErrors, totalErrors }) {
               backgroundColor: '#fef2f2',
             }}
           >
-            <div
-              onClick={() => toggleExpand(client.name)}
+            <button
+              type="button"
+              onClick={() => toggleExpand(name)}
               style={{
+                width: '100%',
                 padding: '10px 12px',
                 cursor: 'pointer',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
+                border: 0,
+                background: 'transparent',
+                textAlign: 'left',
               }}
             >
-              <span
-                style={{ fontSize: '13px', fontWeight: 600, color: '#991b1b' }}
-              >
-                {client.name} &mdash; {errors.length} error
-                {errors.length > 1 ? 's' : ''}
+              <span style={{ fontSize: '13px', fontWeight: 600, color: '#991b1b' }}>
+                {name} — {errors.length} error{errors.length > 1 ? 's' : ''}
               </span>
               <span style={{ fontSize: '12px', color: '#64748b' }}>
                 {isExpanded ? '▼' : '▶'}
               </span>
-            </div>
+            </button>
             {isExpanded && (
               <div style={{ padding: '0 12px 10px' }}>
-                {errors.map((err, i) => (
+                {errors.map((error, index) => (
                   <div
-                    key={i}
+                    key={error.id || index}
                     style={{
-                      padding: '6px 8px',
+                      padding: '8px',
                       marginBottom: '4px',
                       borderRadius: '4px',
                       backgroundColor: 'white',
@@ -80,29 +82,31 @@ export default function ErrorPanel({ clients, getClientErrors, totalErrors }) {
                     }}
                   >
                     <span style={{ fontWeight: 500 }}>
-                      {err.firstName} {err.lastName}
+                      {error.firstName || error.lastName
+                        ? `${error.firstName || ''} ${error.lastName || ''}`.trim()
+                        : 'Service-level upload error'}
                     </span>
                     <span style={{ color: '#64748b' }}>
-                      {err.email || err.phone || 'No email/phone'}
+                      {error.email || error.phone || error.message}
                     </span>
                     <span
                       style={{
                         padding: '1px 6px',
                         borderRadius: '4px',
-                        backgroundColor:
-                          err.statusCode === 'EXCEPTION' ? '#fee2e2' : '#fef3c7',
-                        color:
-                          err.statusCode === 'EXCEPTION' ? '#dc2626' : '#d97706',
+                        backgroundColor: '#fee2e2',
+                        color: '#dc2626',
                         fontSize: '10px',
                         fontWeight: 600,
                       }}
                     >
-                      {err.statusCode === 'EXCEPTION'
+                      {error.statusCode === 'EXCEPTION'
                         ? 'Exception'
-                        : `HTTP ${err.statusCode}`}
-                      {err.retryAttempts > 0 && ` (${err.retryAttempts} retries)`}
+                        : error.statusCode === 'ERROR'
+                        ? 'Error'
+                        : `HTTP ${error.statusCode}`}
+                      {error.retryAttempts > 0 && ` (${error.retryAttempts} retries)`}
                     </span>
-                    {err.error && (
+                    {error.message && (
                       <div
                         style={{
                           gridColumn: '1 / -1',
@@ -110,8 +114,7 @@ export default function ErrorPanel({ clients, getClientErrors, totalErrors }) {
                           marginTop: '2px',
                         }}
                       >
-                        {err.error.substring(0, 150)}
-                        {err.error.length > 150 ? '...' : ''}
+                        {error.message}
                       </div>
                     )}
                   </div>

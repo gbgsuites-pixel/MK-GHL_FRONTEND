@@ -10,6 +10,8 @@ export default function ClientsTab({
   clients,
   syncStatus,
   isSyncing,
+  activeClientNum,
+  syncError,
   totalErrors,
   onSyncAll,
   onSyncSingle,
@@ -19,6 +21,22 @@ export default function ClientsTab({
 }) {
   return (
     <div style={cardStyle}>
+      {syncError && (
+        <div
+          role="alert"
+          style={{
+            marginBottom: '12px',
+            padding: '10px 12px',
+            borderRadius: '8px',
+            color: '#991b1b',
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            fontSize: '12px',
+          }}
+        >
+          <strong>Sync action failed:</strong> {syncError}
+        </div>
+      )}
       <div
         style={{
           display: 'flex',
@@ -58,7 +76,10 @@ export default function ClientsTab({
       <div style={{ display: 'grid', gap: '10px' }}>
         {clients.map((client) => {
           const clientStatus = syncStatus?.clients?.find(
-            (c) => c.name === client.clientName
+            (c) =>
+              c.name === client.clientName ||
+              c.clientName === client.clientName ||
+              c.consultantNum === client.consultantNum
           );
           return (
             <ClientRow
@@ -66,6 +87,7 @@ export default function ClientsTab({
               client={client}
               clientStatus={clientStatus}
               isSyncing={isSyncing}
+              activeClientNum={activeClientNum}
               onSync={onSyncSingle}
               onCsv={onCsv}
               onRefresh={onRefresh}

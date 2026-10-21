@@ -2,34 +2,38 @@ import React from 'react';
 import ProgressBar from '../shared/ProgressBar';
 import { PHASE_LABELS, PHASE_ICONS } from '../../constants/statusColors';
 import { errorBoxStyle } from '../../styles/theme';
+import { getClientErrors, getClientStats, getClientStatus } from '../../utils/syncResult';
 
 /**
  * Per-client progress card shown during live sync.
  * Shows phase, progress bar, stats, and error details.
  */
 export default function ClientProgress({ client }) {
+  const errors = getClientErrors(client);
+  const stats = getClientStats(client);
+  const status = getClientStatus(client);
   const phaseColor =
-    client.phase === 'ghl_sync'
+    status === 'ghl_sync'
       ? '#dbeafe'
-      : client.phase === 'completed'
+      : status === 'completed'
       ? '#dcfce7'
-      : client.phase === 'failed'
+      : status === 'failed'
       ? '#fee2e2'
       : '#f1f5f9';
 
   const phaseTextColor =
-    client.phase === 'ghl_sync'
+    status === 'ghl_sync'
       ? '#2563eb'
-      : client.phase === 'completed'
+      : status === 'completed'
       ? '#16a34a'
-      : client.phase === 'failed'
+      : status === 'failed'
       ? '#dc2626'
       : '#64748b';
 
   const leftBorderColor =
-    client.phase === 'completed'
+    status === 'completed'
       ? '#16a34a'
-      : client.phase === 'failed'
+      : status === 'failed'
       ? '#dc2626'
       : '#2563eb';
 
@@ -55,7 +59,7 @@ export default function ClientProgress({ client }) {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '14px' }}>
-            {PHASE_ICONS[client.phase] || '•'}
+            {PHASE_ICONS[status] || PHASE_ICONS[client.phase] || '•'}
           </span>
           <span style={{ fontWeight: 600, fontSize: '14px' }}>{client.name}</span>
         </div>
@@ -69,7 +73,7 @@ export default function ClientProgress({ client }) {
             backgroundColor: phaseColor,
           }}
         >
-          {PHASE_LABELS[client.phase] || client.phase}
+          {PHASE_LABELS[status] || PHASE_LABELS[client.phase] || status}
         </span>
       </div>
 
@@ -96,17 +100,22 @@ export default function ClientProgress({ client }) {
         {client.progress?.synced !== undefined && (
           <Stat label="Synced" value={client.progress.synced} color="#16a34a" />
         )}
+        {client.progress?.synced === undefined && stats.ghlSynced > 0 && (
+          <Stat label="Synced" value={stats.ghlSynced} color="#16a34a" />
+        )}
         {client.progress?.skipped !== undefined && (
           <Stat label="Skipped" value={client.progress.skipped} color="#d97706" />
         )}
-        {client.progress?.errors > 0 && (
-          <Stat label="Errors" value={client.progress.errors} color="#dc2626" />
+        {stats.ghlErrors > 0 && (
+          <Stat label="Errors" value={stats.ghlErrors} color="#dc2626" />
         )}
       </div>
 
       {/* Error detail */}
-      {client.phase === 'failed' && client.error && (
-        <div style={errorBoxStyle}>{client.error}</div>
+      {errors.length > 0 && (
+        <div style={errorBoxStyle}>
+          {errors.map((error) => error.message).join(' ')}
+        </div>
       )}
     </div>
   );

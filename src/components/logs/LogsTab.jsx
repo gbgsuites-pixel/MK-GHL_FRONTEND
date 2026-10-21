@@ -14,6 +14,9 @@ export default function LogsTab({
   autoScroll,
   setAutoScroll,
   onLoadMore,
+  streamState = 'idle',
+  logsError = '',
+  lastUpdatedAt,
 }) {
   const logContainerRef = useRef(null);
 
@@ -39,6 +42,35 @@ export default function LogsTab({
       >
         Server Logs
       </h3>
+
+      <div
+        role={logsError ? 'alert' : 'status'}
+        style={{
+          marginBottom: '12px',
+          padding: '8px 10px',
+          borderRadius: '6px',
+          color: logsError ? '#991b1b' : '#475569',
+          backgroundColor: logsError ? '#fef2f2' : '#f8fafc',
+          border: `1px solid ${logsError ? '#fecaca' : '#e2e8f0'}`,
+          fontSize: '11px',
+        }}
+      >
+        <strong>
+          {streamState === 'connected'
+            ? 'Live stream connected'
+            : streamState === 'reconnecting'
+            ? 'Live stream reconnecting'
+            : streamState === 'connecting'
+            ? 'Connecting to live logs'
+            : 'Live stream idle'}
+        </strong>
+        {lastUpdatedAt && (
+          <span style={{ marginLeft: '8px', color: '#94a3b8' }}>
+            Last event: {new Date(lastUpdatedAt).toLocaleTimeString('en-US', { hour12: false })}
+          </span>
+        )}
+        {logsError && <div style={{ marginTop: '3px' }}>{logsError}</div>}
+      </div>
 
       {/* Controls */}
       <div
@@ -161,7 +193,7 @@ export default function LogsTab({
                 {log.level}
               </span>
               <span style={{ color: '#e2e8f0', wordBreak: 'break-word' }}>
-                {log.message}
+                {log.message || log.error || log.msg || JSON.stringify(log)}
               </span>
             </div>
           ))

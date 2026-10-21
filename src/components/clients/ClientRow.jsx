@@ -1,5 +1,6 @@
 import React from 'react';
 import StatusBadge from '../shared/StatusBadge';
+import { getClientStats, getClientStatus } from '../../utils/syncResult';
 
 /**
  * Individual client row in the clients list.
@@ -9,11 +10,13 @@ export default function ClientRow({
   client,
   clientStatus,
   isSyncing,
+  activeClientNum,
   onSync,
   onCsv,
   onRefresh,
 }) {
-  const stats = clientStatus?.stats;
+  const stats = getClientStats(clientStatus);
+  const status = getClientStatus(clientStatus);
 
   return (
     <div
@@ -40,18 +43,18 @@ export default function ClientRow({
 
       {/* Status */}
       <div>
-        <StatusBadge status={clientStatus?.status || 'idle'} />
+          <StatusBadge status={status} />
       </div>
 
       {/* Stats */}
       <div style={{ fontSize: '11px', color: '#64748b' }}>
-        {stats ? (
+        {clientStatus ? (
           <div>
             <span>
-              {stats.mergedContacts || stats.total || 0} contacts
+              {stats.mergedContacts} contacts
             </span>
             <br />
-            <span style={{ color: '#16a34a' }}>{stats.ghlSynced || 0} synced</span>
+            <span style={{ color: '#16a34a' }}>{stats.ghlSynced} synced</span>
             {stats.ghlErrors > 0 && (
               <span style={{ color: '#dc2626', marginLeft: '6px' }}>
                 {stats.ghlErrors} errors
@@ -68,6 +71,7 @@ export default function ClientRow({
         <button
           onClick={() => onSync(client.consultantNum)}
           disabled={isSyncing}
+          title="Sync only this client"
           style={{
             padding: '6px 12px',
             borderRadius: '6px',
@@ -79,7 +83,9 @@ export default function ClientRow({
             fontWeight: 600,
           }}
         >
-          Sync
+          {isSyncing && activeClientNum === client.consultantNum
+            ? 'Syncing…'
+            : 'Sync only'}
         </button>
         <button
           onClick={() => onCsv(client.consultantNum, client.clientName)}

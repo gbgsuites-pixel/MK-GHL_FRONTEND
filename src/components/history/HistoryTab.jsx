@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { cardStyle, emptyStateStyle } from '../../styles/theme';
+import { getClientErrors } from '../../utils/syncResult';
 
 /**
  * History tab: in-memory timeline of completed syncs.
@@ -46,10 +47,10 @@ export default function HistoryTab({ historySyncs }) {
       {historySyncs.map((entry) => {
         const isExpanded = expanded[entry.id];
         const successCount = entry.results.filter(
-          (c) => c.status === 'completed'
+          (c) => c.status === 'completed' && getClientErrors(c).length === 0
         ).length;
         const failCount = entry.results.filter(
-          (c) => c.status === 'failed'
+          (c) => c.status === 'failed' || getClientErrors(c).length > 0
         ).length;
 
         return (

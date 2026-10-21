@@ -24,14 +24,35 @@ export async function apiCall(baseUrl, apiKey, path, options = {}) {
   };
   const res = await fetch(url, { ...options, headers });
 
-  if (res.status === 401) {
-    throw new Error('Invalid API key. Please check your credentials.');
-  }
+  const contentType = res.headers.get('content-type') || '';
+  const data = contentType.includes('application/json')
+    ? await res.json().catch(() => ({}))
+    : await res.text().catch(() => '');
+
   if (!res.ok) {
-    const data = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(data.error || res.statusText);
+    if (res.status === 401) {
+      throw new Error('Invalid API key. Please check your credentials.');
+    }
+
+    const message =
+      (typeof data === 'object' && (data.error || data.message || data.detail)) ||
+      (typeof data === 'string' && data) ||
+      res.statusText ||
+      `Request failed with HTTP ${res.status}.`;
+    const error = new Error(message);
+    error.status = res.status;
+    error.payload = data;
+    throw error;
   }
-  return res.json();
+
+  if (typeof data === 'string' && data.length > 0) {
+    try {
+      return JSON.parse(data);
+    } catch (_) {
+      return { message: data };
+    }
+  }
+  return data;
 }
 
 // ── Data Fetching ──

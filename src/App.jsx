@@ -11,12 +11,7 @@ import { useMemory } from './hooks/useMemory';
 import { useHistory } from './hooks/useHistory';
 
 // ── Services ──
-import {
-  triggerSyncAll,
-  triggerSyncSingle,
-  refreshSession,
-  downloadCsv,
-} from './services/api';
+import { refreshSession, downloadCsv } from './services/api';
 
 // ── Constants ──
 import { DEFAULTS } from './constants/config';
@@ -41,31 +36,39 @@ import LogsTab from './components/logs/LogsTab';
  * Thin wiring layer that composes hooks and passes props to tab components.
  */
 export default function App() {
-  // ── State ──
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  // ── Hooks ──
   const connection = useConnection();
   const sync = useSync(connection.backendUrl, connection.apiKey);
+  const logs = useLogs(connection.backendUrl, connection.apiKey);
+
+  // Local action logs must use the same store as the Logs tab. The previous
+  // code appended these to connection.setLogs, which was never rendered.
+  const appendLog = useCallback(
+    (log) => {
+      logs.setLogs((previous) => [...previous, log].slice(-DEFAULTS.logMaxEntries));
+    },
+    [logs.setLogs]
+  );
+
   const schedule = useSchedule(
     connection.backendUrl,
     connection.apiKey,
-    (log) => {
-      connection.setLogs((prev) => {
-        const next = [...prev, log];
-        if (next.length > DEFAULTS.logMaxEntries) next.shift();
-        return next;
-      });
-    }
+    appendLog
   );
-  const logs = useLogs(connection.backendUrl, connection.apiKey);
+
+  // Keep the callback stable. Recreating it on every App render caused the
+  // progress EventSource to tear down and reconnect repeatedly.
+  const handleSyncComplete = useCallback(() => {
+    sync.loadStatus();
+    sync.setIsSyncing(false);
+    sync.setActiveClientNum(null);
+  }, [sync.loadStatus, sync.setIsSyncing, sync.setActiveClientNum]);
+
   const progress = useProgress(
     connection.backendUrl,
     connection.apiKey,
-    () => {
-      sync.loadStatus();
-      sync.setIsSyncing(false);
-    }
+    handleSyncComplete
   );
   const uptime = useHealth(connection.backendUrl, connection.apiKey);
   const memoryInfo = useMemory(logs.logs);
@@ -81,74 +84,71 @@ export default function App() {
 
   const handleSyncAll = useCallback(async () => {
     try {
-      await sync.triggerSync(null, (log) => {
-        connection.setLogs((prev) => {
-          const next = [...prev, log];
-          if (next.length > DEFAULTS.logMaxEntries) next.shift();
-          return next;
-        });
-      });
-    } catch (_) {}
-  }, [sync, connection]);
+      await sync.triggerSync(null, appendLog);
+    } catch (_) {
+      // useSync records the visible error log and syncError state.
+    }
+  }, [sync, appendLog]);
 
   const handleSyncSingle = useCallback(
     async (consultantNum) => {
       try {
-        const path = '/api/sync/' + consultantNum;
-        await sync.triggerSync(consultantNum, (log) => {
-          connection.setLogs((prev) => {
-            const next = [...prev, log];
-            if (next.length > DEFAULTS.logMaxEntries) next.shift();
-            return next;
-          });
-        });
-      } catch (_) {}
+        await sync.triggerSync(consultantNum, appendLog);
+      } catch (_) {
+        // useSync records the visible error log and syncError state.
+      }
     },
-    [sync, connection]
+    [sync, appendLog]
   );
 
   const handleCsv = useCallback(
     async (num, name) => {
       try {
         await downloadCsv(connection.backendUrl, connection.apiKey, num, name);
-      } catch (e) {
-        connection.setLogs((prev) => [
-          ...prev,
-          {
-            timestamp: new Date().toISOString(),
-            level: 'error',
-            message: `CSV download failed: ${e.message}`,
-          },
-        ]);
+        appendLog({
+          timestamp: new Date().toISOString(),
+          level: 'info',
+          message: `CSV export completed for ${name || num}.`,
+          consultantNum: num,
+        });
+      } catch (error) {
+        appendLog({
+          timestamp: new Date().toISOString(),
+          level: 'error',
+          message: `CSV download failed for ${name || num}: ${error.message}`,
+          consultantNum: num,
+        });
       }
     },
-    [connection]
+    [connection.backendUrl, connection.apiKey, appendLog]
   );
 
   const handleRefresh = useCallback(
     async (num) => {
       try {
         await refreshSession(connection.backendUrl, connection.apiKey, num);
-      } catch (e) {
-        connection.setLogs((prev) => [
-          ...prev,
-          {
-            timestamp: new Date().toISOString(),
-            level: 'error',
-            message: `Session refresh failed: ${e.message}`,
-          },
-        ]);
+        appendLog({
+          timestamp: new Date().toISOString(),
+          level: 'info',
+          message: `Session refresh completed for ${num}.`,
+          consultantNum: num,
+        });
+      } catch (error) {
+        appendLog({
+          timestamp: new Date().toISOString(),
+          level: 'error',
+          message: `Session refresh failed for ${num}: ${error.message}`,
+          consultantNum: num,
+        });
       }
     },
-    [connection]
+    [connection.backendUrl, connection.apiKey, appendLog]
   );
 
-  // ── Render ──
   return (
     <div style={pageStyle}>
       <style>{globalStyles}</style>
 
-      {/* Header */}
       <Header
         memoryInfo={memoryInfo}
         serverUptime={uptime}
@@ -157,12 +157,9 @@ export default function App() {
         scheduleForm={schedule.scheduleForm}
       />
 
-      {/* Tab Navigation */}
       <TabNav activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* Content */}
       <div style={contentStyle}>
-        {/* Connection Bar */}
         <ConnectionBar
           backendUrl={connection.backendUrl}
           setBackendUrl={connection.setBackendUrl}
@@ -173,12 +170,13 @@ export default function App() {
           onConnect={handleConnect}
         />
 
-        {/* Tab Content */}
         {activeTab === 'dashboard' && (
           <DashboardTab
             clients={connection.clients}
             syncStatus={sync.syncStatus}
             isSyncing={sync.isSyncing}
+            activeClientNum={sync.activeClientNum}
+            syncError={sync.syncError}
             successCount={sync.successCount}
             failCount={sync.failCount}
             totalSynced={sync.totalSynced}
@@ -202,6 +200,8 @@ export default function App() {
             clients={connection.clients}
             syncStatus={sync.syncStatus}
             isSyncing={sync.isSyncing}
+            activeClientNum={sync.activeClientNum}
+            syncError={sync.syncError}
             totalErrors={sync.totalErrors}
             onSyncAll={handleSyncAll}
             onSyncSingle={handleSyncSingle}
@@ -220,9 +220,7 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'history' && (
-          <HistoryTab historySyncs={historySyncs} />
-        )}
+        {activeTab === 'history' && <HistoryTab historySyncs={historySyncs} />}
 
         {activeTab === 'logs' && (
           <LogsTab
@@ -234,6 +232,9 @@ export default function App() {
             autoScroll={logs.autoScroll}
             setAutoScroll={logs.setAutoScroll}
             onLoadMore={logs.loadLogs}
+            streamState={logs.streamState}
+            logsError={logs.logsError}
+            lastUpdatedAt={logs.lastUpdatedAt}
           />
         )}
       </div>

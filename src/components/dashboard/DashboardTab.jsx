@@ -11,6 +11,8 @@ export default function DashboardTab({
   clients,
   syncStatus,
   isSyncing,
+  activeClientNum,
+  syncError,
   successCount,
   failCount,
   totalSynced,
@@ -29,6 +31,23 @@ export default function DashboardTab({
 }) {
   return (
     <div>
+      {syncError && (
+        <div
+          role="alert"
+          style={{
+            marginBottom: '12px',
+            padding: '10px 12px',
+            borderRadius: '8px',
+            color: '#991b1b',
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            fontSize: '12px',
+          }}
+        >
+          <strong>Sync action failed:</strong> {syncError}
+        </div>
+      )}
+
       {/* Summary Cards */}
       <div
         style={{
@@ -95,6 +114,7 @@ export default function DashboardTab({
           clients={clients}
           syncStatus={syncStatus}
           isSyncing={isSyncing}
+          activeClientNum={activeClientNum}
           onSyncSingle={onSyncSingle}
         />
       )}
