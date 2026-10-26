@@ -96,6 +96,9 @@ export async function apiCall(baseUrl, apiKey, path, options = {}) {
 export const fetchClients = (baseUrl, apiKey) =>
   apiCall(baseUrl, apiKey, ENDPOINTS.clients);
 
+export const fetchManagedClients = (baseUrl, apiKey) =>
+  apiCall(baseUrl, apiKey, ENDPOINTS.managedClients);
+
 export const fetchStatus = (baseUrl, apiKey) =>
   apiCall(baseUrl, apiKey, ENDPOINTS.status);
 
@@ -141,6 +144,21 @@ export const createStreamTicket = (baseUrl, apiKey, stream) =>
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ stream }),
   });
+
+export const updateManagedClientStatus = (baseUrl, apiKey, id, status) =>
+  apiCall(baseUrl, apiKey, ENDPOINTS.managedClientStatus(id), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+
+export const disconnectManagedClient = (baseUrl, apiKey, id) =>
+  apiCall(baseUrl, apiKey, ENDPOINTS.managedClientDisconnect(id), {
+    method: 'DELETE',
+  });
+
+export const validateManagedClient = (baseUrl, apiKey, id) =>
+  apiCall(baseUrl, apiKey, ENDPOINTS.managedClientValidate(id), { method: 'POST' });
 
 // ── File Export ──
 

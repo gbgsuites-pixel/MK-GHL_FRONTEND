@@ -14,6 +14,9 @@ import { useHistory } from './hooks/useHistory';
 import {
   refreshSession,
   downloadCsv,
+  updateManagedClientStatus,
+  disconnectManagedClient,
+  validateManagedClient,
 } from './services/api';
 
 // ── Constants ──
@@ -41,6 +44,7 @@ import LogsTab from './components/logs/LogsTab';
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [exportingClientNum, setExportingClientNum] = useState(null);
+  const [clientActionId, setClientActionId] = useState(null);
 
   const connection = useConnection();
   const sync = useSync(connection.backendUrl, connection.apiKey);
@@ -153,6 +157,69 @@ export default function App() {
     [connection.backendUrl, connection.apiKey, appendLog]
   );
 
+  const handleClientStatusChange = useCallback(
+    async (client, nextStatus) => {
+      if (!client?.id) return;
+      setClientActionId(client.id);
+      try {
+        if (nextStatus === 'disconnected') {
+          await disconnectManagedClient(connection.backendUrl, connection.apiKey, client.id);
+        } else {
+          await updateManagedClientStatus(
+            connection.backendUrl,
+            connection.apiKey,
+            client.id,
+            nextStatus
+          );
+        }
+        await connection.loadClients();
+        appendLog({
+          timestamp: new Date().toISOString(),
+          level: 'info',
+          message: `${client.clientName} status changed to ${nextStatus}.`,
+          consultantNum: client.consultantNum,
+        });
+      } catch (error) {
+        appendLog({
+          timestamp: new Date().toISOString(),
+          level: 'error',
+          message: `Could not change ${client.clientName} status: ${error.message}`,
+          consultantNum: client.consultantNum,
+        });
+      } finally {
+        setClientActionId(null);
+      }
+    },
+    [connection, appendLog]
+  );
+
+  const handleValidateClient = useCallback(
+    async (client) => {
+      if (!client?.id) return;
+      setClientActionId(client.id);
+      try {
+        await validateManagedClient(connection.backendUrl, connection.apiKey, client.id);
+        await connection.loadClients();
+        appendLog({
+          timestamp: new Date().toISOString(),
+          level: 'info',
+          message: `Credential validation completed for ${client.clientName}.`,
+          consultantNum: client.consultantNum,
+        });
+      } catch (error) {
+        appendLog({
+          timestamp: new Date().toISOString(),
+          level: 'error',
+          message: `Credential validation failed for ${client.clientName}: ${error.message}`,
+          consultantNum: client.consultantNum,
+        });
+      } finally {
+        setClientActionId(null);
+      }
+    },
+    [connection, appendLog]
+  );
+
   return (
     <div style={pageStyle}>
       <style>{globalStyles}</style>
@@ -216,6 +283,9 @@ export default function App() {
             onCsv={handleCsv}
             exportingClientNum={exportingClientNum}
             onRefresh={handleRefresh}
+            onStatusChange={handleClientStatusChange}
+            onValidate={handleValidateClient}
+            clientActionId={clientActionId}
             getClientErrors={sync.getClientErrors}
           />
         )}

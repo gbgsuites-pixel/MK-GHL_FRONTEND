@@ -1,5 +1,5 @@
 import React from 'react';
-import { STATUS_COLORS } from '../../constants/statusColors';
+import { STATUS_COLORS, PHASE_LABELS } from '../../constants/statusColors';
 
 /**
  * Reusable status badge with animated dot for active states.
@@ -7,6 +7,13 @@ import { STATUS_COLORS } from '../../constants/statusColors';
 export default function StatusBadge({ status }) {
   const colors = STATUS_COLORS[status] || STATUS_COLORS.idle;
   const isActive = status === 'in_progress' || status === 'running';
+  const label = PHASE_LABELS[status] || {
+    paused: 'Paused',
+    invalid: 'Invalid credentials',
+    disconnected: 'Disconnected',
+    removal_pending: 'Removal pending',
+    pending_validation: 'Pending validation',
+  }[status] || status;
 
   return (
     <span
@@ -32,7 +39,7 @@ export default function StatusBadge({ status }) {
           animation: isActive ? 'pulse 1.5s infinite' : 'none',
         }}
       />
-      {status}
+      {label}
     </span>
   );
 }

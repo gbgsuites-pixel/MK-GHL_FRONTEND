@@ -18,6 +18,9 @@ export default function ClientsTab({
   onCsv,
   exportingClientNum,
   onRefresh,
+  onStatusChange,
+  onValidate,
+  clientActionId,
   getClientErrors,
 }) {
   return (
@@ -93,6 +96,9 @@ export default function ClientsTab({
               onSync={onSyncSingle}
               onCsv={onCsv}
               onRefresh={onRefresh}
+              onStatusChange={onStatusChange}
+              onValidate={onValidate}
+              clientActionId={clientActionId}
             />
           );
         })}

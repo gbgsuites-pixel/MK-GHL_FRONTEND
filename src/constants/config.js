@@ -22,6 +22,11 @@ export const DEFAULT_API_KEY = '';
 export const ENDPOINTS = {
   // Data
   clients: '/api/clients',
+  managedClients: '/api/v1/clients',
+  managedClientStatus: (id) => `/api/v1/clients/${encodeURIComponent(id)}/status`,
+  managedClientValidate: (id) => `/api/v1/clients/${encodeURIComponent(id)}/validate-credentials`,
+  managedClientSync: (id) => `/api/v1/clients/${encodeURIComponent(id)}/sync`,
+  managedClientDisconnect: (id) => `/api/v1/clients/${encodeURIComponent(id)}`,
   status: '/api/status',
   health: '/health',
 
