@@ -80,7 +80,8 @@ export default function App() {
 
   // ── Handlers ──
   const handleConnect = useCallback(() => {
-    connection.loadClients().then(() => {
+    connection.loadClients().then((connected) => {
+      if (!connected) return;
       schedule.loadSchedule();
       logs.loadLogs();
     });

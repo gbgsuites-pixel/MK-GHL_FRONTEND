@@ -43,7 +43,7 @@ function getConnectionError(error, backendUrl) {
  */
 export function useConnection() {
   const [apiKey, setApiKey] = useState(
-    () => localStorage.getItem(STORAGE_KEYS.apiKey) || DEFAULT_API_KEY
+    () => DEFAULT_API_KEY
   );
   const [backendUrl, setBackendUrlState] = useState(getInitialBackendUrl);
   const [clients, setClients] = useState([]);
@@ -56,10 +56,15 @@ export function useConnection() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.apiKey, apiKey);
     if (backendUrl) localStorage.setItem(STORAGE_KEYS.backendUrl, backendUrl);
     else localStorage.removeItem(STORAGE_KEYS.backendUrl);
-  }, [apiKey, backendUrl]);
+  }, [backendUrl]);
+
+  useEffect(() => {
+    // A URL or credential change represents a new backend/tenant boundary.
+    // Do not leave the previous client's records visible during reconnect.
+    setClients([]);
+  }, [backendUrl, apiKey]);
 
   const loadClients = useCallback(async () => {
     setConnectionError('');
@@ -75,9 +80,14 @@ export function useConnection() {
     setIsConnecting(true);
     try {
       const data = await fetchClients(backendUrl, apiKey);
-      setClients(data?.clients || data?.data || []);
+      const nextClients = data?.clients || data?.data || [];
+      if (!Array.isArray(nextClients)) {
+        throw new Error('Backend returned an invalid client list.');
+      }
+      setClients(nextClients);
       return true;
     } catch (error) {
+      setClients([]);
       setConnectionError(getConnectionError(error, backendUrl));
       return false;
     } finally {

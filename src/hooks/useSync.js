@@ -32,7 +32,7 @@ export function useSync(backendUrl, apiKey) {
 
   // ── Poll every 10s ──
   useEffect(() => {
-    if (!apiKey) return undefined;
+    if (!apiKey || !backendUrl) return undefined;
     loadStatus();
     const interval = setInterval(loadStatus, 10000);
     return () => clearInterval(interval);

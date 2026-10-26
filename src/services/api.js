@@ -106,7 +106,11 @@ export const fetchLogs = (baseUrl, apiKey, limit = 500, level = 'all') =>
   apiCall(baseUrl, apiKey, ENDPOINTS.logsRecent(limit, level));
 
 export const fetchHealth = (baseUrl) =>
-  fetch(`${baseUrl}/health`).then((r) => r.json());
+  fetch(`${cleanBaseUrl(baseUrl)}${ENDPOINTS.health}`).then(async (r) => {
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || `Health check failed with HTTP ${r.status}.`);
+    return data;
+  });
 
 // ── Actions ──
 
@@ -131,6 +135,13 @@ export const toggleCron = (baseUrl, apiKey, enable) =>
     method: 'POST',
   });
 
+export const createStreamTicket = (baseUrl, apiKey, stream) =>
+  apiCall(baseUrl, apiKey, ENDPOINTS.streamTicket, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ stream }),
+  });
+
 // ── File Export ──
 
 /**
@@ -139,8 +150,8 @@ export const toggleCron = (baseUrl, apiKey, enable) =>
  * not call the GHL upload function or start a sync job.
  */
 export async function downloadCsv(baseUrl, apiKey, consultantNum, clientName) {
-  const url = `${baseUrl}${ENDPOINTS.exportCsv(consultantNum)}?apiKey=${encodeURIComponent(apiKey)}`;
-  const res = await fetch(url);
+  const url = `${cleanBaseUrl(baseUrl)}${ENDPOINTS.exportCsv(consultantNum)}`;
+  const res = await fetch(url, { headers: { 'x-api-key': apiKey } });
 
   if (!res.ok) {
     const contentType = res.headers.get('content-type') || '';
@@ -165,7 +176,7 @@ export async function downloadCsv(baseUrl, apiKey, consultantNum, clientName) {
   link.href = URL.createObjectURL(blob);
   link.download = filename;
   link.click();
-  URL.revokeObjectURL(link.href);
+  window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 }
 
 // ── SSE Streams ──
@@ -174,8 +185,8 @@ export async function downloadCsv(baseUrl, apiKey, consultantNum, clientName) {
  * Create an SSE connection for live logs.
  * @returns {{ eventSource: EventSource, close: () => void }}
  */
-export function createLogStream(baseUrl, apiKey) {
-  const url = `${baseUrl}${ENDPOINTS.logsSse(apiKey)}`;
+export function createLogStream(baseUrl, ticket) {
+  const url = `${cleanBaseUrl(baseUrl)}${ENDPOINTS.logsSse(ticket)}`;
   const evtSource = new EventSource(url);
   return {
     eventSource: evtSource,
@@ -187,8 +198,8 @@ export function createLogStream(baseUrl, apiKey) {
  * Create an SSE connection for live progress.
  * @returns {{ eventSource: EventSource, close: () => void }}
  */
-export function createProgressStream(baseUrl, apiKey) {
-  const url = `${baseUrl}${ENDPOINTS.progressSse(apiKey)}`;
+export function createProgressStream(baseUrl, ticket) {
+  const url = `${cleanBaseUrl(baseUrl)}${ENDPOINTS.progressSse(ticket)}`;
   const evtSource = new EventSource(url);
   return {
     eventSource: evtSource,

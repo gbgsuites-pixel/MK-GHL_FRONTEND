@@ -40,12 +40,12 @@ export default function ConnectionBar({
         />
       </div>
       <div style={{ flex: 1, minWidth: '140px' }}>
-        <label style={labelStyle}>API Key</label>
+        <label style={labelStyle}>Dashboard Access Key (runtime only)</label>
         <input
           type="password"
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
-          placeholder="my-local-test-key"
+          placeholder="Enter the runtime access key"
           aria-label="Backend API key"
           style={inputStyle}
         />

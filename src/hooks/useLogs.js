@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { fetchLogs, createLogStream } from '../services/api';
+import { fetchLogs, createLogStream, createStreamTicket } from '../services/api';
 import { DEFAULTS } from '../constants/config';
 
 function normalizeLog(entry, index = 0) {
@@ -46,9 +46,9 @@ function mergeLogs(previous, incoming) {
 }
 
 /**
- * Hook: manages server log streaming and filtering.
- * Returns logs, filters, and stream health so the UI can distinguish an empty
- * log buffer from a disconnected or failed logging endpoint.
+ * Manage recent logs plus the ticket-authenticated SSE stream.
+ * Long-lived API keys are exchanged through a header-authenticated REST call;
+ * only a short-lived stream ticket appears in the EventSource URL.
  */
 export function useLogs(backendUrl, apiKey) {
   const [logs, setLogs] = useState([]);
@@ -60,12 +60,11 @@ export function useLogs(backendUrl, apiKey) {
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const sseLogRef = useRef(null);
   const reconnectTimerRef = useRef(null);
+  const generationRef = useRef(0);
 
   const loadLogs = useCallback(async () => {
-    if (!apiKey) return;
+    if (!apiKey || !backendUrl) return;
     try {
-      // Fetch the full buffer once; filtering remains client-side so changing
-      // INFO/WARN/ERROR does not permanently discard the other levels.
       const data = await fetchLogs(backendUrl, apiKey, DEFAULTS.logMaxEntries, 'all');
       setLogs(normalizeLogList(data));
       setLogsError('');
@@ -76,54 +75,85 @@ export function useLogs(backendUrl, apiKey) {
   }, [backendUrl, apiKey]);
 
   useEffect(() => {
-    if (!apiKey) {
+    setLogs([]);
+    setLogsError('');
+    setLastUpdatedAt(null);
+
+    if (!apiKey || !backendUrl) {
       setStreamState('idle');
       return undefined;
     }
 
-    loadLogs();
-    setStreamState('connecting');
+    let disposed = false;
+    const generation = ++generationRef.current;
 
-    const connect = () => {
-      if (sseLogRef.current) sseLogRef.current.close();
-      setStreamState('connecting');
-
-      const { eventSource, close } = createLogStream(backendUrl, apiKey);
-      const handleEntry = (event) => {
-        try {
-          const entry = normalizeLog(JSON.parse(event.data));
-          setLogs((previous) => mergeLogs(previous, [entry]));
-          setLogsError('');
-          setLastUpdatedAt(entry.timestamp);
-        } catch (error) {
-          setLogsError('Received an invalid log event from the server.');
-        }
-      };
-
-      eventSource.onopen = () => {
-        setStreamState('connected');
-        setLogsError('');
-      };
-      eventSource.onmessage = handleEntry;
-      eventSource.addEventListener('log', handleEntry);
-      eventSource.onerror = () => {
-        close();
-        setStreamState('reconnecting');
-        setLogsError('Live logs disconnected. Retrying in 5 seconds.');
-        clearTimeout(reconnectTimerRef.current);
-        reconnectTimerRef.current = setTimeout(connect, 5000);
-      };
-
-      sseLogRef.current = eventSource;
-    };
-
-    connect();
-    return () => {
-      clearTimeout(reconnectTimerRef.current);
+    const closeCurrent = () => {
       if (sseLogRef.current) {
         sseLogRef.current.close();
         sseLogRef.current = null;
       }
+    };
+
+    const connect = async () => {
+      if (disposed || generation !== generationRef.current) return;
+      setStreamState('connecting');
+
+      try {
+        const ticketResponse = await createStreamTicket(backendUrl, apiKey, 'logs');
+        if (disposed || generation !== generationRef.current) return;
+
+        const { eventSource, close } = createLogStream(backendUrl, ticketResponse.ticket);
+        const handleEntry = (event) => {
+          if (disposed || generation !== generationRef.current) return;
+          try {
+            const entry = normalizeLog(JSON.parse(event.data));
+            setLogs((previous) => mergeLogs(previous, [entry]));
+            setLogsError('');
+            setLastUpdatedAt(entry.timestamp);
+          } catch (_) {
+            setLogsError('Received an invalid log event from the server.');
+          }
+        };
+
+        eventSource.onopen = () => {
+          if (disposed || generation !== generationRef.current) return;
+          setStreamState('connected');
+          setLogsError('');
+        };
+        eventSource.onmessage = handleEntry;
+        eventSource.addEventListener('log', handleEntry);
+        eventSource.onerror = () => {
+          if (disposed || generation !== generationRef.current) return;
+          close();
+          sseLogRef.current = null;
+          setStreamState('reconnecting');
+          setLogsError('Live logs disconnected. Retrying in 5 seconds.');
+          clearTimeout(reconnectTimerRef.current);
+          reconnectTimerRef.current = window.setTimeout(() => {
+            void connect();
+          }, 5000);
+        };
+
+        sseLogRef.current = eventSource;
+      } catch (error) {
+        if (disposed || generation !== generationRef.current) return;
+        setStreamState('reconnecting');
+        setLogsError(error.message || 'Unable to create the live log stream.');
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = window.setTimeout(() => {
+          void connect();
+        }, 5000);
+      }
+    };
+
+    void loadLogs();
+    void connect();
+
+    return () => {
+      disposed = true;
+      generationRef.current += 1;
+      clearTimeout(reconnectTimerRef.current);
+      closeCurrent();
     };
   }, [apiKey, backendUrl, loadLogs]);
 

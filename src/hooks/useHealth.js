@@ -9,7 +9,8 @@ export function useHealth(backendUrl, apiKey) {
   const [serverUptime, setServerUptime] = useState(null);
 
   useEffect(() => {
-    if (!apiKey) return;
+    setServerUptime(null);
+    if (!apiKey || !backendUrl) return undefined;
 
     const poll = async () => {
       try {

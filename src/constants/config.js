@@ -14,7 +14,9 @@ const configuredBackendUrl = normalizeBackendUrl(import.meta.env.VITE_BACKEND_UR
 // to provide VITE_BACKEND_URL instead of silently calling the frontend host.
 export const BACKEND_URL =
   configuredBackendUrl || (import.meta.env.DEV ? 'http://localhost:3000' : '');
-export const DEFAULT_API_KEY = import.meta.env.VITE_API_KEY || '';
+// Never ship a backend credential in Vite's public bundle. The operator enters
+// the short-lived/session-scoped dashboard credential at runtime.
+export const DEFAULT_API_KEY = '';
 
 // ── API Endpoints ──
 export const ENDPOINTS = {
@@ -41,8 +43,9 @@ export const ENDPOINTS = {
   // Logs
   logsRecent: (limit = 500, level = 'all') =>
     `/api/logs/recent?limit=${limit}&level=${level}`,
-  logsSse: (key) => `/api/logs?apiKey=${encodeURIComponent(key)}`,
-  progressSse: (key) => `/api/progress?apiKey=${encodeURIComponent(key)}`,
+  streamTicket: '/api/stream-ticket',
+  logsSse: (ticket) => `/api/logs?ticket=${encodeURIComponent(ticket)}`,
+  progressSse: (ticket) => `/api/progress?ticket=${encodeURIComponent(ticket)}`,
 };
 
 // ── Defaults ──
@@ -57,6 +60,5 @@ export const DEFAULTS = {
 
 // ── Storage Keys ──
 export const STORAGE_KEYS = {
-  apiKey: 'mk_api_key',
   backendUrl: 'mk_backend_url',
 };

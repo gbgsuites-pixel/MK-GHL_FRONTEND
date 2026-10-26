@@ -29,9 +29,10 @@ Adds in-memory log buffer and SSE subscription support for real-time log streami
 1. Create a new GitHub repo and push the `mk-dashboard/` folder to it
 2. Go to [Vercel](https://vercel.com/new) and import the repo
 3. Vercel will auto-detect Vite — no build settings needed
-4. Add these **Environment Variables** in Vercel Settings:
+4. Add this **Environment Variable** in Vercel Settings:
    - `VITE_BACKEND_URL` = your Render backend URL (e.g., `https://mk-ghl-sync.onrender.com`)
-   - `VITE_API_KEY` = your API secret key (e.g., `my-local-test-key`)
+5. Do **not** add `VITE_API_KEY`. Vite embeds every `VITE_*` value into the public browser bundle.
+6. In the Render backend, set `FRONTEND_ORIGINS` to the exact deployed Vercel origin, for example `https://your-dashboard.vercel.app`.
 5. Click **Deploy**
 
 ### Option B: Direct Vercel CLI
@@ -46,7 +47,6 @@ vercel deploy --prod
 Then set env vars:
 ```bash
 vercel env add VITE_BACKEND_URL production
-vercel env add VITE_API_KEY production
 ```
 
 ---
@@ -56,14 +56,17 @@ vercel env add VITE_API_KEY production
 | Variable | Value | Description |
 |----------|-------|-------------|
 | `VITE_BACKEND_URL` | `https://your-app.onrender.com` | Your Render backend URL |
-| `VITE_API_KEY` | `my-local-test-key` | Same as `API_SECRET_KEY` in backend `.env` |
 
-These can also be set directly in the UI (Settings > Environment Variables).
+The dashboard access key is entered at runtime in the connection panel and is
+kept in memory only. It is sent in the `x-api-key` header for REST calls. The
+frontend first exchanges it for a short-lived stream ticket before opening
+logs/progress SSE connections, so the long-lived key is not placed in a URL.
+Do not commit the key, put it in a `VITE_*` variable, or store it in browser
+localStorage.
 
-After changing either variable, trigger a new Vercel deployment. Vite embeds
-`VITE_BACKEND_URL` and `VITE_API_KEY` at build time; changing the Vercel
-environment variable without rebuilding does not update an already deployed
-bundle. The frontend deliberately does not fall back to `localhost:3000` in a
+After changing `VITE_BACKEND_URL`, trigger a new Vercel deployment. Changing a
+Vercel environment variable without rebuilding does not update an already
+deployed bundle. The frontend deliberately does not fall back to `localhost:3000` in a
 production build. A stale localhost value saved in browser localStorage is
 also ignored in production.
 
