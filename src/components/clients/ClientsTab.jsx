@@ -3,6 +3,7 @@ import { cardStyle, emptyStateStyle } from '../../styles/theme';
 import ClientRow from './ClientRow';
 import ClientDetailPanel from './ClientDetailPanel';
 import ErrorPanel from './ErrorPanel';
+import AddClientPanel from './AddClientPanel';
 
 /**
  * Clients tab: full client list with actions and error panel.
@@ -21,6 +22,8 @@ export default function ClientsTab({
   onRefresh,
   onStatusChange,
   onValidate,
+  onCreate,
+  onRemove,
   clientActionId,
   getClientErrors,
 }) {
@@ -32,6 +35,9 @@ export default function ClientsTab({
 
   return (
     <div style={cardStyle}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
+        <AddClientPanel onCreate={onCreate} busy={clientActionId === 'create'} />
+      </div>
       {syncError && (
         <div
           role="alert"
@@ -105,6 +111,7 @@ export default function ClientsTab({
               onRefresh={onRefresh}
               onStatusChange={onStatusChange}
               onValidate={onValidate}
+              onRemove={onRemove}
               clientActionId={clientActionId}
               onDetails={(client) => setSelectedClientId(client.id || client.consultantNum)}
             />
@@ -117,6 +124,7 @@ export default function ClientsTab({
         onClose={() => setSelectedClientId(null)}
         onValidate={onValidate}
         onStatusChange={onStatusChange}
+        onRemove={onRemove}
         actionBusy={selectedClient ? clientActionId === selectedClient.id : false}
       />
 

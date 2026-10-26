@@ -18,6 +18,7 @@ export default function ClientRow({
   onRefresh,
   onStatusChange,
   onValidate,
+  onRemove,
   clientActionId,
   onDetails,
 }) {
@@ -29,10 +30,14 @@ export default function ClientRow({
   const isPaused = status === 'paused';
 
   const handleDisconnect = () => {
-    if (!window.confirm(`Disconnect ${client.clientName}? Future scheduled and manual syncs will be disabled.`)) {
+    if (!window.confirm(`Disable ${client.clientName}? Future scheduled and manual syncs will stop, but the client record will remain available.`)) {
       return;
     }
     onStatusChange?.(client, 'disconnected');
+  };
+
+  const handleRemove = () => {
+    onRemove?.(client);
   };
 
   return (
@@ -119,9 +124,12 @@ export default function ClientRow({
             )}
             {status !== 'disconnected' && (
               <button onClick={handleDisconnect} disabled={isBusy} style={buttonStyle('#fee2e2', isBusy, '#991b1b')}>
-                Disconnect
+                Disable sync
               </button>
             )}
+            <button onClick={handleRemove} disabled={isBusy} style={buttonStyle('#7f1d1d', isBusy, '#ffffff')}>
+              Remove
+            </button>
           </>
         )}
       </div>

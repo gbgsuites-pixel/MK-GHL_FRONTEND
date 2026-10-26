@@ -2,7 +2,7 @@ import React from 'react';
 import { cardStyle, btnSecondary } from '../../styles/theme';
 import StatusBadge from '../shared/StatusBadge';
 
-export default function ClientDetailPanel({ client, onClose, onValidate, onStatusChange, actionBusy }) {
+export default function ClientDetailPanel({ client, onClose, onValidate, onStatusChange, onRemove, actionBusy }) {
   if (!client) return null;
   const status = client.status || 'active';
   const isPaused = status === 'paused';
@@ -46,6 +46,14 @@ export default function ClientDetailPanel({ client, onClose, onValidate, onStatu
               {isPaused ? 'Resume client' : 'Pause client'}
             </button>
           )}
+          {status !== 'disconnected' && (
+            <button type="button" onClick={() => onStatusChange?.(client, 'disconnected')} disabled={actionBusy} style={{ ...btnSecondary, color: '#991b1b', borderColor: '#fecaca', backgroundColor: '#fef2f2' }}>
+              Disable sync
+            </button>
+          )}
+          <button type="button" onClick={() => onRemove?.(client)} disabled={actionBusy} style={{ ...btnSecondary, color: '#ffffff', borderColor: '#7f1d1d', backgroundColor: '#7f1d1d' }}>
+            Remove completely
+          </button>
         </div>
       )}
     </section>

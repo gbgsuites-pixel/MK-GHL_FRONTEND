@@ -162,6 +162,13 @@ export const createStreamTicket = (baseUrl, apiKey, stream) =>
     body: JSON.stringify({ stream }),
   });
 
+export const createManagedClient = (baseUrl, apiKey, client) =>
+  apiCall(baseUrl, apiKey, ENDPOINTS.managedClientCreate, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(client),
+  });
+
 export const updateManagedClientStatus = (baseUrl, apiKey, id, status) =>
   apiCall(baseUrl, apiKey, ENDPOINTS.managedClientStatus(id), {
     method: 'PATCH',
@@ -171,6 +178,11 @@ export const updateManagedClientStatus = (baseUrl, apiKey, id, status) =>
 
 export const disconnectManagedClient = (baseUrl, apiKey, id) =>
   apiCall(baseUrl, apiKey, ENDPOINTS.managedClientDisconnect(id), {
+    method: 'DELETE',
+  });
+
+export const removeManagedClient = (baseUrl, apiKey, id) =>
+  apiCall(baseUrl, apiKey, ENDPOINTS.managedClientRemove(id), {
     method: 'DELETE',
   });
 

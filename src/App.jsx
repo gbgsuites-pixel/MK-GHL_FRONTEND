@@ -14,8 +14,10 @@ import { useHistory } from './hooks/useHistory';
 import {
   refreshSession,
   downloadCsv,
+  createManagedClient,
   updateManagedClientStatus,
   disconnectManagedClient,
+  removeManagedClient,
   validateManagedClient,
 } from './services/api';
 
@@ -220,6 +222,66 @@ export default function App() {
     [connection, appendLog]
   );
 
+  const handleCreateClient = useCallback(
+    async (clientInput) => {
+      setClientActionId('create');
+      try {
+        const result = await createManagedClient(
+          connection.backendUrl,
+          connection.apiKey,
+          clientInput
+        );
+        await connection.loadClients();
+        appendLog({
+          timestamp: new Date().toISOString(),
+          level: 'info',
+          message: `Client ${clientInput.clientName} added. ${result.customFieldCount || 0} GHL custom fields were stored.`,
+          consultantNum: clientInput.consultantNum,
+        });
+        return result;
+      } catch (error) {
+        appendLog({
+          timestamp: new Date().toISOString(),
+          level: 'error',
+          message: `Could not add ${clientInput.clientName || clientInput.consultantNum}: ${error.message}`,
+          consultantNum: clientInput.consultantNum,
+        });
+        throw error;
+      } finally {
+        setClientActionId(null);
+      }
+    },
+    [connection, appendLog]
+  );
+
+  const handleRemoveClient = useCallback(
+    async (client) => {
+      if (!client?.id) return;
+      if (!window.confirm(`Remove ${client.clientName} completely from this integration? Historical sync history will remain, but the client record and encrypted credentials will be deleted.`)) return;
+      setClientActionId(client.id);
+      try {
+        await removeManagedClient(connection.backendUrl, connection.apiKey, client.id);
+        await connection.loadClients();
+        appendLog({
+          timestamp: new Date().toISOString(),
+          level: 'warn',
+          message: `${client.clientName} was permanently removed from the integration.`,
+          consultantNum: client.consultantNum,
+        });
+      } catch (error) {
+        appendLog({
+          timestamp: new Date().toISOString(),
+          level: 'error',
+          message: `Could not remove ${client.clientName}: ${error.message}`,
+          consultantNum: client.consultantNum,
+        });
+      } finally {
+        setClientActionId(null);
+      }
+    },
+    [connection, appendLog]
+  );
+
   return (
     <div style={pageStyle}>
       <style>{globalStyles}</style>
@@ -286,6 +348,8 @@ export default function App() {
             onRefresh={handleRefresh}
             onStatusChange={handleClientStatusChange}
             onValidate={handleValidateClient}
+            onCreate={handleCreateClient}
+            onRemove={handleRemoveClient}
             clientActionId={clientActionId}
             getClientErrors={sync.getClientErrors}
           />
