@@ -3,14 +3,20 @@ import { cardStyle, emptyStateStyle } from '../../styles/theme';
 import { getClientErrors } from '../../utils/syncResult';
 
 /**
- * History tab: in-memory timeline of completed syncs.
+ * History tab: durable timeline of completed syncs.
  * Each entry is expandable to show per-client results.
  */
-export default function HistoryTab({ historySyncs }) {
+export default function HistoryTab({ historySyncs, historyError = '', onLoadDetail }) {
   const [expanded, setExpanded] = useState({});
 
-  const toggle = (id) =>
-    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+  const toggle = (id) => {
+    const entry = historySyncs.find((item) => item.id === id);
+    const willExpand = !expanded[id];
+    setExpanded((prev) => ({ ...prev, [id]: willExpand }));
+    if (willExpand && entry && entry.results.length === 0) {
+      void onLoadDetail?.(id);
+    }
+  };
 
   const formatDateTime = (ts) => {
     try {
@@ -23,12 +29,13 @@ export default function HistoryTab({ historySyncs }) {
   if (historySyncs.length === 0) {
     return (
       <div style={cardStyle}>
+        {historyError && <div role="alert" style={historyErrorStyle}>{historyError}</div>}
         <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: '#1e293b' }}>
           Sync History
         </h3>
         <p style={{ ...emptyStateStyle, padding: '48px 0' }}>
           <div style={{ fontSize: '32px', marginBottom: '12px' }}>📋</div>
-          No completed syncs in this session.
+          No completed syncs were found in durable history.
           <br />
           <span style={{ fontSize: '12px' }}>
             Run a sync to see results here.
@@ -40,6 +47,7 @@ export default function HistoryTab({ historySyncs }) {
 
   return (
     <div style={cardStyle}>
+      {historyError && <div role="alert" style={historyErrorStyle}>{historyError}</div>}
       <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 600, color: '#1e293b' }}>
         Sync History ({historySyncs.length})
       </h3>
@@ -159,3 +167,13 @@ export default function HistoryTab({ historySyncs }) {
     </div>
   );
 }
+
+const historyErrorStyle = {
+  marginBottom: '10px',
+  padding: '8px 10px',
+  borderRadius: '6px',
+  color: '#991b1b',
+  backgroundColor: '#fef2f2',
+  border: '1px solid #fecaca',
+  fontSize: '11px',
+};

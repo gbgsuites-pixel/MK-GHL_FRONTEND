@@ -119,6 +119,12 @@ export const fetchLogEvents = (baseUrl, apiKey, filters = {}) => {
   return apiCall(baseUrl, apiKey, `${ENDPOINTS.logEvents}${suffix ? `?${suffix}` : ''}`);
 };
 
+export const fetchExecutionHistory = (baseUrl, apiKey, limit = 50) =>
+  apiCall(baseUrl, apiKey, `${ENDPOINTS.executionHistory}?limit=${Math.min(Math.max(Number(limit) || 50, 1), 200)}`);
+
+export const fetchExecutionDetail = (baseUrl, apiKey, executionId) =>
+  apiCall(baseUrl, apiKey, ENDPOINTS.executionDetail(executionId));
+
 export const fetchHealth = (baseUrl) =>
   fetch(`${cleanBaseUrl(baseUrl)}${ENDPOINTS.health}`).then(async (r) => {
     const data = await r.json().catch(() => ({}));

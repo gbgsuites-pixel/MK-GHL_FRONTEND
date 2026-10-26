@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { cardStyle, emptyStateStyle } from '../../styles/theme';
 import ClientRow from './ClientRow';
+import ClientDetailPanel from './ClientDetailPanel';
 import ErrorPanel from './ErrorPanel';
 
 /**
@@ -23,6 +24,12 @@ export default function ClientsTab({
   clientActionId,
   getClientErrors,
 }) {
+  const [selectedClientId, setSelectedClientId] = useState(null);
+  const selectedClient = useMemo(
+    () => clients.find((client) => String(client.id || client.consultantNum) === String(selectedClientId)) || null,
+    [clients, selectedClientId]
+  );
+
   return (
     <div style={cardStyle}>
       {syncError && (
@@ -99,10 +106,19 @@ export default function ClientsTab({
               onStatusChange={onStatusChange}
               onValidate={onValidate}
               clientActionId={clientActionId}
+              onDetails={(client) => setSelectedClientId(client.id || client.consultantNum)}
             />
           );
         })}
       </div>
+
+      <ClientDetailPanel
+        client={selectedClient}
+        onClose={() => setSelectedClientId(null)}
+        onValidate={onValidate}
+        onStatusChange={onStatusChange}
+        actionBusy={selectedClient ? clientActionId === selectedClient.id : false}
+      />
 
       {/* Error Summary Panel */}
       {syncStatus?.clients && (

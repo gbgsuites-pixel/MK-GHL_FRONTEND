@@ -80,7 +80,7 @@ export default function App() {
   );
   const uptime = useHealth(connection.backendUrl, connection.apiKey);
   const memoryInfo = useMemory(logs.logs);
-  const historySyncs = useHistory(sync.syncStatus);
+  const history = useHistory(connection.backendUrl, connection.apiKey, sync.syncStatus);
 
   // ── Handlers ──
   const handleConnect = useCallback(() => {
@@ -300,7 +300,13 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'history' && <HistoryTab historySyncs={historySyncs} />}
+        {activeTab === 'history' && (
+          <HistoryTab
+            historySyncs={history.historySyncs}
+            historyError={history.historyError}
+            onLoadDetail={history.loadExecutionDetail}
+          />
+        )}
 
         {activeTab === 'logs' && (
           <LogsTab

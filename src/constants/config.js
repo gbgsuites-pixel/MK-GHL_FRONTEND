@@ -52,6 +52,10 @@ export const ENDPOINTS = {
   streamTicket: '/api/stream-ticket',
   logsSse: (ticket) => `/api/logs?ticket=${encodeURIComponent(ticket)}`,
   progressSse: (ticket) => `/api/progress?ticket=${encodeURIComponent(ticket)}`,
+
+  // Durable execution history
+  executionHistory: '/api/history/execution',
+  executionDetail: (id) => `/api/history/execution/${encodeURIComponent(id)}`,
 };
 
 // ── Defaults ──

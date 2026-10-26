@@ -19,6 +19,7 @@ export default function ClientRow({
   onStatusChange,
   onValidate,
   clientActionId,
+  onDetails,
 }) {
   const stats = getClientStats(clientStatus);
   const status = client.status || getClientStatus(clientStatus);
@@ -74,6 +75,9 @@ export default function ClientRow({
       </div>
 
       <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <button onClick={() => onDetails?.(client)} style={buttonStyle('#e0e7ff', false, '#3730a3')} title="View client detail">
+          Details
+        </button>
         <button
           onClick={() => onSync(client.consultantNum)}
           disabled={isSyncing || (isManaged && !isActive)}
