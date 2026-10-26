@@ -11,6 +11,20 @@ export default function LogsTab({
   setLogSearch,
   logFilter,
   setLogFilter,
+  logCategory = 'all',
+  setLogCategory,
+  logStatus = 'all',
+  setLogStatus,
+  logRetryable = 'all',
+  setLogRetryable,
+  logClientId = '',
+  setLogClientId,
+  logExecutionId = '',
+  setLogExecutionId,
+  logSince = '',
+  setLogSince,
+  logUntil = '',
+  setLogUntil,
   autoScroll,
   setAutoScroll,
   onLoadMore,
@@ -109,6 +123,45 @@ export default function LogsTab({
             {level}
           </button>
         ))}
+        <select value={logCategory} onChange={(e) => setLogCategory(e.target.value)} style={filterStyle} aria-label="Log category">
+          {['all', 'auth', 'source_fetch', 'validation', 'sync', 'upload', 'schedule', 'admin', 'system'].map((category) => (
+            <option key={category} value={category}>{category === 'all' ? 'All categories' : category.replace('_', ' ')}</option>
+          ))}
+        </select>
+        <select value={logStatus} onChange={(e) => setLogStatus(e.target.value)} style={filterStyle} aria-label="Log status">
+          {['all', 'started', 'succeeded', 'failed', 'blocked', 'partial_success', 'skipped'].map((status) => (
+            <option key={status} value={status}>{status === 'all' ? 'All statuses' : status.replace('_', ' ')}</option>
+          ))}
+        </select>
+        <select value={logRetryable} onChange={(e) => setLogRetryable(e.target.value)} style={filterStyle} aria-label="Retryable log filter">
+          <option value="all">Retryable: all</option>
+          <option value="true">Retryable only</option>
+          <option value="false">Non-retryable</option>
+        </select>
+        <input
+          type="text"
+          placeholder="Client ID..."
+          value={logClientId}
+          onChange={(e) => setLogClientId(e.target.value)}
+          style={{ ...inputStyle, maxWidth: '150px' }}
+          aria-label="Client ID filter"
+        />
+        <input
+          type="text"
+          placeholder="Execution ID..."
+          value={logExecutionId}
+          onChange={(e) => setLogExecutionId(e.target.value)}
+          style={{ ...inputStyle, maxWidth: '165px' }}
+          aria-label="Execution ID filter"
+        />
+        <label style={dateLabelStyle}>
+          From
+          <input type="datetime-local" value={logSince} onChange={(e) => setLogSince(e.target.value)} style={dateInputStyle} />
+        </label>
+        <label style={dateLabelStyle}>
+          To
+          <input type="datetime-local" value={logUntil} onChange={(e) => setLogUntil(e.target.value)} style={dateInputStyle} />
+        </label>
         {/* Auto-scroll toggle */}
         <button
           onClick={() => setAutoScroll(!autoScroll)}
@@ -206,3 +259,27 @@ export default function LogsTab({
     </div>
   );
 }
+
+const filterStyle = {
+  padding: '5px 8px',
+  borderRadius: '4px',
+  backgroundColor: '#f8fafc',
+  color: '#475569',
+  border: '1px solid #e2e8f0',
+  cursor: 'pointer',
+  fontSize: '11px',
+};
+
+const dateLabelStyle = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '4px',
+  color: '#64748b',
+  fontSize: '10px',
+};
+
+const dateInputStyle = {
+  ...filterStyle,
+  color: '#475569',
+  maxWidth: '170px',
+};

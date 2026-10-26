@@ -46,6 +46,7 @@ export const ENDPOINTS = {
   cronDisable: '/api/cron/disable',
 
   // Logs
+  logEvents: '/api/v1/log-events',
   logsRecent: (limit = 500, level = 'all') =>
     `/api/logs/recent?limit=${limit}&level=${level}`,
   streamTicket: '/api/stream-ticket',

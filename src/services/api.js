@@ -108,6 +108,17 @@ export const fetchSchedule = (baseUrl, apiKey) =>
 export const fetchLogs = (baseUrl, apiKey, limit = 500, level = 'all') =>
   apiCall(baseUrl, apiKey, ENDPOINTS.logsRecent(limit, level));
 
+export const fetchLogEvents = (baseUrl, apiKey, filters = {}) => {
+  const params = new URLSearchParams();
+  Object.entries({ limit: 500, ...filters }).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '' && value !== 'all') {
+      params.set(key, String(value));
+    }
+  });
+  const suffix = params.toString();
+  return apiCall(baseUrl, apiKey, `${ENDPOINTS.logEvents}${suffix ? `?${suffix}` : ''}`);
+};
+
 export const fetchHealth = (baseUrl) =>
   fetch(`${cleanBaseUrl(baseUrl)}${ENDPOINTS.health}`).then(async (r) => {
     const data = await r.json().catch(() => ({}));
