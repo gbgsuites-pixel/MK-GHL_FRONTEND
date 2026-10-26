@@ -259,6 +259,7 @@ export default function App() {
             totalErrors={sync.totalErrors}
             schedule={schedule.schedule}
             scheduleForm={schedule.scheduleForm}
+            setScheduleForm={schedule.setScheduleForm}
             isEditingSchedule={schedule.isEditingSchedule}
             setIsEditingSchedule={schedule.setIsEditingSchedule}
             scheduleSaving={schedule.scheduleSaving}

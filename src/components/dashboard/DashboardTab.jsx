@@ -22,6 +22,7 @@ export default function DashboardTab({
   scheduleForm,
   isEditingSchedule,
   setIsEditingSchedule,
+  setScheduleForm,
   scheduleSaving,
   onSyncAll,
   onSyncSingle,
@@ -93,10 +94,7 @@ export default function DashboardTab({
           isEditingSchedule={isEditingSchedule}
           setIsEditingSchedule={setIsEditingSchedule}
           scheduleForm={scheduleForm}
-          setScheduleForm={(updater) => {
-            // handled via parent setScheduleForm
-            if (typeof updater === 'function') updater((prev) => prev);
-          }}
+          setScheduleForm={setScheduleForm}
           scheduleSaving={scheduleSaving}
           onSave={onSaveSchedule}
           onToggle={onToggleCron}
@@ -104,6 +102,7 @@ export default function DashboardTab({
         <QuickActions
           isSyncing={isSyncing}
           clientCount={clients.length}
+          onSyncAll={onSyncAll}
           onTabChange={onTabChange}
         />
       </div>

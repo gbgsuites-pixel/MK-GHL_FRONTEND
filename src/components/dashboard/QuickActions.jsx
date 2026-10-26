@@ -4,7 +4,7 @@ import { cardStyle, btnSuccess } from '../../styles/theme';
 /**
  * Quick actions card: Sync All, View Logs, View Clients, Sync History.
  */
-export default function QuickActions({ isSyncing, clientCount, onTabChange }) {
+export default function QuickActions({ isSyncing, clientCount, onSyncAll, onTabChange }) {
   return (
     <div style={cardStyle}>
       <h3 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: 600, color: '#475569' }}>
@@ -12,7 +12,7 @@ export default function QuickActions({ isSyncing, clientCount, onTabChange }) {
       </h3>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
         <button
-          onClick={onTabChange}
+          onClick={onSyncAll}
           style={{
             ...btnSuccess,
             backgroundColor: isSyncing ? '#94a3b8' : '#16a34a',
