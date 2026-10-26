@@ -43,7 +43,7 @@ export function useProgress(backendUrl, apiKey, onSyncComplete) {
           try {
             const data = JSON.parse(event.data);
             setLiveProgress(data);
-            if (['completed', 'failed'].includes(data.status) && onSyncComplete) {
+            if (['completed', 'completed_with_errors', 'failed'].includes(data.status) && onSyncComplete) {
               onSyncComplete();
             }
           } catch (_) {

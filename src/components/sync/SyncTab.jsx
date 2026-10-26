@@ -128,9 +128,21 @@ export default function SyncTab({
               padding: '10px 14px',
               borderRadius: '8px',
               backgroundColor:
-                liveProgress.status === 'completed' ? '#f0fdf4' : '#eff6ff',
+                liveProgress.status === 'completed'
+                  ? '#f0fdf4'
+                  : liveProgress.status === 'failed'
+                  ? '#fef2f2'
+                  : liveProgress.status === 'completed_with_errors'
+                  ? '#fffbeb'
+                  : '#eff6ff',
               border: `1px solid ${
-                liveProgress.status === 'completed' ? '#bbf7d0' : '#bfdbfe'
+                liveProgress.status === 'completed'
+                  ? '#bbf7d0'
+                  : liveProgress.status === 'failed'
+                  ? '#fecaca'
+                  : liveProgress.status === 'completed_with_errors'
+                  ? '#fde68a'
+                  : '#bfdbfe'
               }`,
               marginBottom: '16px',
             }}
@@ -138,11 +150,21 @@ export default function SyncTab({
             <span style={{ fontWeight: 600, fontSize: '14px' }}>
               {liveProgress.status === 'completed'
                 ? 'All Clients Completed'
+                : liveProgress.status === 'completed_with_errors'
+                ? 'Sync Completed with Errors'
+                : liveProgress.status === 'failed'
+                ? 'Sync Failed'
                 : 'Sync In Progress'}
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               {statusBadge(
-                liveProgress.status === 'completed' ? 'completed' : 'running'
+                liveProgress.status === 'completed'
+                  ? 'completed'
+                  : liveProgress.status === 'failed'
+                  ? 'failed'
+                  : liveProgress.status === 'completed_with_errors'
+                  ? 'completed_with_errors'
+                  : 'running'
               )}
               <span style={{ fontSize: '11px', color: '#64748b' }}>
                 {
@@ -166,8 +188,12 @@ export default function SyncTab({
                 marginTop: '16px',
                 padding: '12px 16px',
                 borderRadius: '8px',
-                backgroundColor: '#f0fdf4',
-                border: '1px solid #bbf7d0',
+                backgroundColor:
+                  liveProgress.status === 'completed' ? '#f0fdf4' : '#fffbeb',
+                border:
+                  liveProgress.status === 'completed'
+                    ? '1px solid #bbf7d0'
+                    : '1px solid #fde68a',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -177,11 +203,13 @@ export default function SyncTab({
                 <span
                   style={{
                     fontSize: '13px',
-                    color: '#16a34a',
+                    color: liveProgress.status === 'completed' ? '#16a34a' : '#b45309',
                     fontWeight: 600,
                   }}
                 >
-                  Sync completed in{' '}
+                  {liveProgress.status === 'completed'
+                    ? 'Sync completed in '
+                    : 'Sync finished with issues in '}
                   {liveProgress.summary?.durationMin || 0} minutes
                 </span>
               </div>
@@ -191,8 +219,10 @@ export default function SyncTab({
                     .length
                 }{' '}
                 succeeded &middot;{' '}
-                {liveProgress.clients.filter((c) => c.phase === 'failed').length}{' '}
-                failed
+                {liveProgress.clients.filter((c) =>
+                  ['failed', 'blocked', 'partial_success'].includes(c.phase)
+                ).length}{' '}
+                failed/partial
               </div>
             </div>
           )}

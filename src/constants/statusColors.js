@@ -5,6 +5,9 @@
 // ── Status badge colors ──
 export const STATUS_COLORS = {
   completed:   { bg: '#dcfce7', text: '#16a34a', dot: '#16a34a' },
+  partial_success: { bg: '#fef3c7', text: '#b45309', dot: '#d97706' },
+  completed_with_errors: { bg: '#fef3c7', text: '#b45309', dot: '#d97706' },
+  blocked:    { bg: '#fee2e2', text: '#b91c1c', dot: '#dc2626' },
   failed:      { bg: '#fee2e2', text: '#dc2626', dot: '#dc2626' },
   no_contacts: { bg: '#fef3c7', text: '#d97706', dot: '#d97706' },
   in_progress: { bg: '#dbeafe', text: '#2563eb', dot: '#2563eb' },
@@ -27,6 +30,9 @@ export const PHASE_LABELS = {
   data_fetched: 'Data Ready',
   ghl_sync:     'Syncing to GoHighLevel...',
   completed:    'Completed',
+  partial_success: 'Partial success',
+  completed_with_errors: 'Completed with errors',
+  blocked:      'Blocked before upload',
   failed:       'Failed',
 };
 
@@ -36,6 +42,8 @@ export const PHASE_ICONS = {
   data_fetched: '✅',
   ghl_sync:     '📤',
   completed:    '✅',
+  partial_success: '⚠️',
+  blocked:      '⛔',
   failed:       '❌',
 };
 

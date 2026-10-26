@@ -57,7 +57,15 @@ export function getClientErrors(client) {
     client?.uploadStatus,
     client?.ghlResult?.status,
     client?.uploadResult?.status,
-  ].some((value) => ['failed', 'error', 'failed_upload', 'upload_failed'].includes(value));
+  ].some((value) => [
+    'failed',
+    'error',
+    'failed_upload',
+    'upload_failed',
+    'blocked',
+    'partial_success',
+    'completed_with_errors',
+  ].includes(value));
   const explicitFailure =
     client?.success === false ||
     client?.uploadSuccess === false ||
@@ -87,6 +95,12 @@ export function getClientErrors(client) {
 
 export function getClientStatus(client) {
   const errors = getClientErrors(client);
+  const partial = [client?.status, client?.phase, client?.uploadStatus]
+    .includes('partial_success');
+  const blocked = [client?.status, client?.phase, client?.uploadStatus]
+    .includes('blocked');
+  if (blocked) return 'blocked';
+  if (partial) return 'partial_success';
   if (errors.length > 0) return 'failed';
   if (client?.status === 'completed' || client?.phase === 'completed') return 'completed';
   if (client?.status === 'failed' || client?.phase === 'failed') return 'failed';

@@ -17,6 +17,10 @@ export default function ClientProgress({ client }) {
       ? '#dbeafe'
       : status === 'completed'
       ? '#dcfce7'
+      : status === 'partial_success'
+      ? '#fef3c7'
+      : status === 'blocked'
+      ? '#fee2e2'
       : status === 'failed'
       ? '#fee2e2'
       : '#f1f5f9';
@@ -26,6 +30,10 @@ export default function ClientProgress({ client }) {
       ? '#2563eb'
       : status === 'completed'
       ? '#16a34a'
+      : status === 'partial_success'
+      ? '#b45309'
+      : status === 'blocked'
+      ? '#b91c1c'
       : status === 'failed'
       ? '#dc2626'
       : '#64748b';
@@ -33,6 +41,10 @@ export default function ClientProgress({ client }) {
   const leftBorderColor =
     status === 'completed'
       ? '#16a34a'
+      : status === 'partial_success'
+      ? '#d97706'
+      : status === 'blocked'
+      ? '#dc2626'
       : status === 'failed'
       ? '#dc2626'
       : '#2563eb';
