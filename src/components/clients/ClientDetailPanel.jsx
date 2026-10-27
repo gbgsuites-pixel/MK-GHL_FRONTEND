@@ -11,6 +11,9 @@ export default function ClientDetailPanel({ client, onClose, onValidate, onStatu
   const protectedFieldAlerts = Array.isArray(syncStats.protectedFieldAlerts)
     ? syncStats.protectedFieldAlerts
     : [];
+  const protectedFieldWarnings = Array.isArray(syncStats.protectedFieldWarnings)
+    ? syncStats.protectedFieldWarnings
+    : [];
 
   return (
     <section style={{ ...cardStyle, marginTop: '12px', backgroundColor: '#f8fafc' }} aria-labelledby="client-detail-heading">
@@ -33,7 +36,7 @@ export default function ClientDetailPanel({ client, onClose, onValidate, onStatu
         <Detail label="Last sync status">{client.lastSyncStatus || '—'}</Detail>
         <Detail label="Contacts last sync">{syncStats.contacts ?? '—'}</Detail>
         <Detail label="Contacts synced">{syncStats.synced ?? '—'}</Detail>
-        <Detail label="Protected fields">{protectedFieldAlerts.length > 0 ? 'Blocked' : 'No recorded alerts'}</Detail>
+        <Detail label="Protected fields">{protectedFieldAlerts.length > 0 ? 'Blocked' : protectedFieldWarnings.length > 0 ? 'Unverified' : 'No recorded alerts'}</Detail>
       </div>
 
       {client.validationErrorCode && (
@@ -45,6 +48,12 @@ export default function ClientDetailPanel({ client, onClose, onValidate, onStatu
       {protectedFieldAlerts.length > 0 && (
         <div style={{ marginTop: '12px', padding: '8px 10px', borderRadius: '6px', backgroundColor: '#fef2f2', color: '#991b1b', fontSize: '11px' }}>
           Protected-field safety block: {protectedFieldAlerts.join(' ')}
+        </div>
+      )}
+
+      {protectedFieldWarnings.length > 0 && (
+        <div style={{ marginTop: '12px', padding: '8px 10px', borderRadius: '6px', backgroundColor: '#fffbeb', color: '#92400e', fontSize: '11px' }}>
+          Protected-field verification warning: {protectedFieldWarnings.join(' ')}
         </div>
       )}
 

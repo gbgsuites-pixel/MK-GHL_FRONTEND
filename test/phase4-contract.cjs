@@ -55,5 +55,6 @@ const detail = read('src/components/clients/ClientDetailPanel.jsx');
 assert.match(detail, /GHL custom fields/);
 assert.match(detail, /Contacts last sync/);
 assert.match(detail, /Revalidate GHL fields/);
+assert.match(detail, /protectedFieldWarnings/);
 
 console.log('frontend_contract_tests=PASS');
