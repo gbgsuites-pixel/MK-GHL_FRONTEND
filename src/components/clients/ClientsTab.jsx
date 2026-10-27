@@ -81,8 +81,17 @@ export default function ClientsTab({
             }}
           >
             {isSyncing ? 'Running...' : 'Sync All'}
-        </button>
+          </button>
       </div>
+
+      <ClientDetailPanel
+        client={selectedClient}
+        onClose={() => setSelectedClientId(null)}
+        onValidate={onValidate}
+        onStatusChange={onStatusChange}
+        onRemove={onRemove}
+        actionBusy={selectedClient ? clientActionId === selectedClient.id : false}
+      />
 
       {clients.length === 0 && (
         <p style={emptyStateStyle}>
@@ -118,15 +127,6 @@ export default function ClientsTab({
           );
         })}
       </div>
-
-      <ClientDetailPanel
-        client={selectedClient}
-        onClose={() => setSelectedClientId(null)}
-        onValidate={onValidate}
-        onStatusChange={onStatusChange}
-        onRemove={onRemove}
-        actionBusy={selectedClient ? clientActionId === selectedClient.id : false}
-      />
 
       {/* Error Summary Panel */}
       {syncStatus?.clients && (

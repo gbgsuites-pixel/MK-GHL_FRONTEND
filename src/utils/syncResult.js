@@ -112,6 +112,7 @@ export function getClientStats(client) {
   const progress = client?.progress || {};
   const ghlResult = client?.ghlResult || {};
   const uploadResult = client?.uploadResult || {};
+  const explicitErrors = getClientErrors(client).length;
 
   return {
     mergedContacts:
@@ -127,13 +128,10 @@ export function getClientStats(client) {
       ghlResult.synced ??
       uploadResult.synced ??
       0,
-    ghlErrors:
-      stats.ghlErrors ??
-      stats.errors ??
-      progress.errors ??
-      ghlResult.errors?.length ??
-      uploadResult.errors?.length ??
-      getClientErrors(client).length,
+    ghlErrors: Math.max(
+      Number(stats.ghlErrors ?? stats.errors ?? progress.errors ?? ghlResult.errors?.length ?? uploadResult.errors?.length ?? 0),
+      explicitErrors
+    ),
     skipped: stats.skipped ?? progress.skipped ?? 0,
   };
 }

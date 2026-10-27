@@ -7,6 +7,10 @@ export default function ClientDetailPanel({ client, onClose, onValidate, onStatu
   const status = client.status || 'active';
   const isPaused = status === 'paused';
   const isManaged = Boolean(client.id);
+  const syncStats = client.lastSyncStats || {};
+  const protectedFieldAlerts = Array.isArray(syncStats.protectedFieldAlerts)
+    ? syncStats.protectedFieldAlerts
+    : [];
 
   return (
     <section style={{ ...cardStyle, marginTop: '12px', backgroundColor: '#f8fafc' }} aria-labelledby="client-detail-heading">
@@ -22,10 +26,14 @@ export default function ClientDetailPanel({ client, onClose, onValidate, onStatu
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', marginTop: '14px' }}>
         <Detail label="Lifecycle"><StatusBadge status={status} /></Detail>
         <Detail label="GHL location">{client.locationId || client.ghlLocationId || '—'}</Detail>
+        <Detail label="GHL custom fields">{client.customFieldCount ?? '—'}</Detail>
         <Detail label="Validation">{client.validationStatus || 'Not checked'}</Detail>
         <Detail label="Last validation">{formatDate(client.lastValidationAt)}</Detail>
         <Detail label="Last sync">{formatDate(client.lastSyncAt)}</Detail>
         <Detail label="Last sync status">{client.lastSyncStatus || '—'}</Detail>
+        <Detail label="Contacts last sync">{syncStats.contacts ?? '—'}</Detail>
+        <Detail label="Contacts synced">{syncStats.synced ?? '—'}</Detail>
+        <Detail label="Protected fields">{protectedFieldAlerts.length > 0 ? 'Blocked' : 'No recorded alerts'}</Detail>
       </div>
 
       {client.validationErrorCode && (
@@ -34,11 +42,17 @@ export default function ClientDetailPanel({ client, onClose, onValidate, onStatu
         </div>
       )}
 
+      {protectedFieldAlerts.length > 0 && (
+        <div style={{ marginTop: '12px', padding: '8px 10px', borderRadius: '6px', backgroundColor: '#fef2f2', color: '#991b1b', fontSize: '11px' }}>
+          Protected-field safety block: {protectedFieldAlerts.join(' ')}
+        </div>
+      )}
+
       {isManaged && (
         <div style={{ display: 'flex', gap: '8px', marginTop: '14px', flexWrap: 'wrap' }}>
-          {(status === 'pending_validation' || status === 'invalid') && (
+          {(status === 'pending_validation' || status === 'invalid' || status === 'active') && (
             <button type="button" onClick={() => onValidate?.(client)} disabled={actionBusy} style={btnSecondary}>
-              {actionBusy ? 'Checking…' : 'Validate credentials'}
+              {actionBusy ? 'Checking…' : client.validationStatus === 'valid' ? 'Revalidate GHL fields' : 'Validate credentials'}
             </button>
           )}
           {(status === 'active' || status === 'paused') && (

@@ -20,6 +20,7 @@ export function useSync(backendUrl, apiKey) {
     try {
       const data = await fetchStatus(backendUrl, apiKey);
       setSyncStatus(data);
+      setSyncError('');
       const running = ['running', 'in_progress', 'pending'].includes(data.status);
       setIsSyncing(running);
       if (!running && !preserveActive) setActiveClientNum(null);
@@ -102,7 +103,7 @@ export function useSync(backendUrl, apiKey) {
 function computeStats(syncStatus) {
   const clients = syncStatus?.clients || [];
   const totalErrors = clients.reduce(
-    (sum, client) => sum + getClientStats(client).ghlErrors,
+    (sum, client) => sum + Math.max(getClientStats(client).ghlErrors, extractClientErrors(client).length),
     0
   );
   const totalSynced = clients.reduce(

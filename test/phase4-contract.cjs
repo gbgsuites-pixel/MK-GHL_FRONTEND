@@ -43,5 +43,17 @@ assert.match(addClient, /ghlLocationId/);
 const row = read('src/components/clients/ClientRow.jsx');
 assert.match(row, /Disable sync/);
 assert.match(row, /Remove/);
+assert.match(row, /client\.validationStatus === 'unknown'/);
+
+const syncResult = read('src/utils/syncResult.js');
+assert.match(syncResult, /Math\.max\(/);
+
+const errorPanel = read('src/components/clients/ErrorPanel.jsx');
+assert.match(errorPanel, /new Map\(\)/);
+
+const detail = read('src/components/clients/ClientDetailPanel.jsx');
+assert.match(detail, /GHL custom fields/);
+assert.match(detail, /Contacts last sync/);
+assert.match(detail, /Revalidate GHL fields/);
 
 console.log('frontend_contract_tests=PASS');

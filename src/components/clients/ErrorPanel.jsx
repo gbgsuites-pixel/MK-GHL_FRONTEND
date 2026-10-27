@@ -7,9 +7,29 @@ import React, { useState } from 'react';
  */
 export default function ErrorPanel({ clients, getClientErrors, totalErrors }) {
   const [expanded, setExpanded] = useState({});
-  const clientsWithErrors = clients
-    .map((client) => ({ client, errors: getClientErrors(client.name || client.clientName) }))
-    .filter(({ errors }) => errors.length > 0);
+  const clientsWithErrors = Array.from(
+    clients.reduce((groups, client) => {
+      const identity = client.consultantNum || client.name || client.clientName || 'unknown-client';
+      const errors = getClientErrors(client.name || client.clientName);
+      if (errors.length === 0) return groups;
+
+      const existing = groups.get(identity);
+      if (!existing) {
+        groups.set(identity, { client, errors: [...errors] });
+        return groups;
+      }
+
+      const seen = new Set(existing.errors.map((error) => `${error.message}|${error.email || ''}|${error.statusCode || ''}`));
+      errors.forEach((error) => {
+        const key = `${error.message}|${error.email || ''}|${error.statusCode || ''}`;
+        if (!seen.has(key)) {
+          existing.errors.push(error);
+          seen.add(key);
+        }
+      });
+      return groups;
+    }, new Map()).values()
+  );
 
   if (clientsWithErrors.length === 0) return null;
 
@@ -26,7 +46,7 @@ export default function ErrorPanel({ clients, getClientErrors, totalErrors }) {
           color: '#dc2626',
         }}
       >
-        ⚠️ Sync and upload errors ({totalErrors})
+        ⚠️ Sync and upload errors ({clientsWithErrors.reduce((sum, item) => sum + item.errors.length, 0) || totalErrors || 0})
       </h4>
       {clientsWithErrors.map(({ client, errors }) => {
         const name = client.name || client.clientName || 'Unknown client';

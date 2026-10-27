@@ -108,9 +108,9 @@ export default function ClientRow({
         </button>
         {isManaged && (
           <>
-            {(status === 'pending_validation' || status === 'invalid') && (
+            {(status === 'pending_validation' || status === 'invalid' || client.validationStatus === 'unknown') && (
               <button onClick={() => onValidate?.(client)} disabled={isBusy} style={buttonStyle('#e0e7ff', isBusy, '#3730a3')}>
-                {isBusy ? 'Checking…' : 'Validate'}
+                {isBusy ? 'Checking…' : client.validationStatus === 'unknown' ? 'Validate fields' : 'Validate'}
               </button>
             )}
             {(isActive || isPaused) && (
