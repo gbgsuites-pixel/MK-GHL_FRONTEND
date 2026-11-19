@@ -64,3 +64,13 @@ assert.match(app, /onUpdateCredentials={handleUpdateCredentials}/);
 assert.match(clientsTab, /onUpdateCredentials={onUpdateCredentials}/);
 
 console.log('frontend_contract_tests=PASS');
+
+// Validation feedback is visible on the Clients tab, not only in Logs.
+const appForNotice = read('src/App.jsx');
+assert.match(appForNotice, /setClientNotice/);
+assert.match(appForNotice, /SYNC_IN_PROGRESS/);
+const clientsTabForNotice = read('src/components/clients/ClientsTab.jsx');
+assert.match(clientsTabForNotice, /clientNotice\.message/);
+const clientRowForStats = read('src/components/clients/ClientRow.jsx');
+assert.match(clientRowForStats, /client\.lastSyncStats/);
+assert.match(clientRowForStats, /disabled=\{isBusy \|\| isSyncing\}/);

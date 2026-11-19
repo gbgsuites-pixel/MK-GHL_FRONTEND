@@ -48,6 +48,9 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [exportingClientNum, setExportingClientNum] = useState(null);
   const [clientActionId, setClientActionId] = useState(null);
+  // Result of the last validate/credentials action, shown on the Clients tab
+  // so the outcome is visible without opening the Logs tab.
+  const [clientNotice, setClientNotice] = useState(null);
 
   const connection = useConnection();
   const sync = useSync(connection.backendUrl, connection.apiKey);
@@ -200,9 +203,14 @@ export default function App() {
     async (client) => {
       if (!client?.id) return;
       setClientActionId(client.id);
+      setClientNotice(null);
       try {
         await validateManagedClient(connection.backendUrl, connection.apiKey, client.id);
         await connection.loadClients();
+        setClientNotice({
+          level: 'success',
+          message: `${client.clientName} validated and active. It will be included in the next sync.`,
+        });
         appendLog({
           timestamp: new Date().toISOString(),
           level: 'info',
@@ -210,6 +218,10 @@ export default function App() {
           consultantNum: client.consultantNum,
         });
       } catch (error) {
+        setClientNotice({
+          level: isSyncInProgress(error) ? 'warn' : 'error',
+          message: validationFailureMessage(client, error),
+        });
         appendLog({
           timestamp: new Date().toISOString(),
           level: 'error',
@@ -229,6 +241,7 @@ export default function App() {
     async (client, credentials) => {
       if (!client?.id) return;
       setClientActionId(client.id);
+      setClientNotice(null);
       try {
         await updateManagedClientCredentials(connection.backendUrl, connection.apiKey, client.id, credentials);
         appendLog({
@@ -245,7 +258,15 @@ export default function App() {
             message: `${client.clientName} validated and active.`,
             consultantNum: client.consultantNum,
           });
+          setClientNotice({
+            level: 'success',
+            message: `Credentials saved. ${client.clientName} validated and active.`,
+          });
         } catch (validationError) {
+          setClientNotice({
+            level: isSyncInProgress(validationError) ? 'warn' : 'error',
+            message: `Credentials saved. ${validationFailureMessage(client, validationError)}`,
+          });
           appendLog({
             timestamp: new Date().toISOString(),
             level: 'error',
@@ -401,6 +422,8 @@ export default function App() {
             onCreate={handleCreateClient}
             onRemove={handleRemoveClient}
             onUpdateCredentials={handleUpdateCredentials}
+            clientNotice={clientNotice}
+            onDismissNotice={() => setClientNotice(null)}
             clientActionId={clientActionId}
             getClientErrors={sync.getClientErrors}
           />
@@ -455,4 +478,17 @@ export default function App() {
       </div>
     </div>
   );
+}
+
+function isSyncInProgress(error) {
+  return error?.status === 409 || error?.payload?.code === 'SYNC_IN_PROGRESS';
+}
+
+// The backend refuses validation while a sync runs because validating would
+// close the browser the sync is using. Say so plainly instead of a raw error.
+function validationFailureMessage(client, error) {
+  if (isSyncInProgress(error)) {
+    return `${client.clientName} was not validated because a sync is running right now. Nothing is wrong with the client. Click Validate again after the sync finishes.`;
+  }
+  return `Validation failed for ${client.clientName}: ${error.message}`;
 }

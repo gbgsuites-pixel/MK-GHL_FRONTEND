@@ -25,6 +25,8 @@ export default function ClientsTab({
   onCreate,
   onRemove,
   onUpdateCredentials,
+  clientNotice,
+  onDismissNotice,
   clientActionId,
   getClientErrors,
 }) {
@@ -53,6 +55,46 @@ export default function ClientsTab({
           }}
         >
           <strong>Sync action failed:</strong> {syncError}
+        </div>
+      )}
+      {clientNotice && (
+        <div
+          role={clientNotice.level === 'error' ? 'alert' : 'status'}
+          style={{
+            marginBottom: '12px',
+            padding: '10px 12px',
+            borderRadius: '8px',
+            fontSize: '12px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: '12px',
+            ...NOTICE_COLORS[clientNotice.level || 'error'],
+          }}
+        >
+          <span>{clientNotice.message}</span>
+          <button
+            type="button"
+            onClick={onDismissNotice}
+            aria-label="Dismiss message"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', fontSize: '14px', lineHeight: 1 }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+      {isSyncing && (
+        <div
+          role="status"
+          style={{
+            marginBottom: '12px',
+            padding: '10px 12px',
+            borderRadius: '8px',
+            fontSize: '12px',
+            ...NOTICE_COLORS.info,
+          }}
+        >
+          A sync is running. New clients can be added now, but Validate is paused until the sync finishes.
         </div>
       )}
       <div
@@ -92,6 +134,7 @@ export default function ClientsTab({
         onStatusChange={onStatusChange}
         onRemove={onRemove}
         onUpdateCredentials={onUpdateCredentials}
+        isSyncing={isSyncing}
         actionBusy={selectedClient ? clientActionId === selectedClient.id : false}
       />
 
@@ -141,3 +184,10 @@ export default function ClientsTab({
     </div>
   );
 }
+
+const NOTICE_COLORS = {
+  success: { color: '#166534', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0' },
+  info: { color: '#3730a3', backgroundColor: '#eef2ff', border: '1px solid #c7d2fe' },
+  warn: { color: '#92400e', backgroundColor: '#fffbeb', border: '1px solid #fde68a' },
+  error: { color: '#991b1b', backgroundColor: '#fef2f2', border: '1px solid #fecaca' },
+};
