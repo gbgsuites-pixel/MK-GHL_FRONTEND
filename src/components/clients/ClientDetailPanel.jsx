@@ -1,20 +1,34 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { cardStyle, btnSecondary } from '../../styles/theme';
 import StatusBadge from '../shared/StatusBadge';
+import { lastSyncProblem } from '../../utils/clientHealth';
 
 const EMPTY_CREDENTIALS = { password: '', ghlApiToken: '' };
 
-export default function ClientDetailPanel({ client, onClose, onValidate, onStatusChange, onRemove, onUpdateCredentials, actionBusy, isSyncing }) {
+export default function ClientDetailPanel({ client, onClose, onValidate, onStatusChange, onRemove, onUpdateCredentials, actionBusy, isSyncing, credentialsRequest }) {
   const [showCredentials, setShowCredentials] = useState(false);
   const [credentials, setCredentials] = useState(EMPTY_CREDENTIALS);
   const [credentialError, setCredentialError] = useState('');
 
-  // Never keep typed secrets around when switching to another client.
+  const sectionRef = useRef(null);
+
+  // Never keep typed secrets around when switching to another client. The
+  // panel sits above the client list, so bring it into view when it opens.
   useEffect(() => {
     setShowCredentials(false);
     setCredentials(EMPTY_CREDENTIALS);
     setCredentialError('');
+    if (client?.id) sectionRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
   }, [client?.id]);
+
+  // "Update login" on a client row opens the panel with the form already open.
+  // Declared after the reset effect so it wins when both run together.
+  useEffect(() => {
+    if (!credentialsRequest || !client) return;
+    if (String(credentialsRequest.id) !== String(client.id || client.consultantNum)) return;
+    setShowCredentials(true);
+    sectionRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+  }, [credentialsRequest?.nonce, client?.id]);
 
   if (!client) return null;
 
@@ -39,6 +53,7 @@ export default function ClientDetailPanel({ client, onClose, onValidate, onStatu
   const status = client.status || 'active';
   const isPaused = status === 'paused';
   const isManaged = Boolean(client.id);
+  const problem = isManaged ? lastSyncProblem(client) : null;
   const syncStats = client.lastSyncStats || {};
   const protectedFieldAlerts = Array.isArray(syncStats.protectedFieldAlerts)
     ? syncStats.protectedFieldAlerts
@@ -48,7 +63,7 @@ export default function ClientDetailPanel({ client, onClose, onValidate, onStatu
     : [];
 
   return (
-    <section style={{ ...cardStyle, marginTop: '12px', backgroundColor: '#f8fafc' }} aria-labelledby="client-detail-heading">
+    <section ref={sectionRef} style={{ ...cardStyle, marginTop: '12px', backgroundColor: '#f8fafc', scrollMarginTop: '12px' }} aria-labelledby="client-detail-heading">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
         <div>
           <div style={{ color: '#64748b', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Client detail</div>
@@ -70,6 +85,25 @@ export default function ClientDetailPanel({ client, onClose, onValidate, onStatu
         <Detail label="Contacts synced">{syncStats.synced ?? '—'}</Detail>
         <Detail label="Protected fields">{protectedFieldAlerts.length > 0 ? 'Blocked' : protectedFieldWarnings.length > 0 ? 'Unverified' : 'No recorded alerts'}</Detail>
       </div>
+
+      {problem && (
+        <div
+          role={problem.resolved ? 'status' : 'alert'}
+          style={{
+            marginTop: '12px',
+            padding: '8px 10px',
+            borderRadius: '6px',
+            fontSize: '11px',
+            ...(problem.resolved
+              ? { backgroundColor: '#f0fdf4', color: '#166534' }
+              : problem.kind === 'site'
+              ? { backgroundColor: '#fffbeb', color: '#92400e' }
+              : { backgroundColor: '#fef2f2', color: '#991b1b' }),
+          }}
+        >
+          <strong>{problem.label}.</strong> {problem.detail}
+        </div>
+      )}
 
       {client.validationErrorCode && (
         <div style={{ marginTop: '12px', padding: '8px 10px', borderRadius: '6px', backgroundColor: '#fff7ed', color: '#9a3412', fontSize: '11px' }}>
@@ -114,7 +148,7 @@ export default function ClientDetailPanel({ client, onClose, onValidate, onStatu
           )}
           {onUpdateCredentials && (
             <button type="button" onClick={() => setShowCredentials((open) => !open)} disabled={actionBusy} style={btnSecondary} aria-expanded={showCredentials}>
-              Update credentials
+              Update Mary Kay password / GHL token
             </button>
           )}
           <button type="button" onClick={() => onRemove?.(client)} disabled={actionBusy} style={{ ...btnSecondary, color: '#ffffff', borderColor: '#7f1d1d', backgroundColor: '#7f1d1d' }}>
@@ -125,8 +159,9 @@ export default function ClientDetailPanel({ client, onClose, onValidate, onStatu
 
       {isManaged && showCredentials && (
         <form onSubmit={submitCredentials} style={{ marginTop: '12px', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#1e293b', marginBottom: '4px' }}>Update credentials</div>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: '#1e293b', marginBottom: '4px' }}>Update login details</div>
           <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '10px' }}>
+            Mary Kay InTouch signs in with consultant number <strong>{client.consultantNum}</strong> and the password below.
             Leave a field blank to keep its current value. Values are encrypted and never shown again. The client is re-validated after saving.
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>

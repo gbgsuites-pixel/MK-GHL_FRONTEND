@@ -57,7 +57,7 @@ assert.match(detail, /Contacts last sync/);
 assert.match(detail, /Revalidate GHL fields/);
 assert.match(detail, /protectedFieldWarnings/);
 
-assert.match(detail, /Update credentials/);
+assert.match(detail, /Update Mary Kay password \/ GHL token/);
 assert.match(detail, /onUpdateCredentials/);
 assert.match(api, /updateManagedClientCredentials/);
 assert.match(app, /onUpdateCredentials={handleUpdateCredentials}/);
@@ -74,3 +74,12 @@ assert.match(clientsTabForNotice, /clientNotice\.message/);
 const clientRowForStats = read('src/components/clients/ClientRow.jsx');
 assert.match(clientRowForStats, /client\.lastSyncStats/);
 assert.match(clientRowForStats, /disabled=\{isBusy \|\| isSyncing\}/);
+
+// Failed Mary Kay logins are visible on the row, which offers Update login.
+const clientRowLogin = read('src/components/clients/ClientRow.jsx');
+assert.match(clientRowLogin, /lastSyncProblem\(client\)/);
+assert.match(clientRowLogin, /Update login/);
+const clientHealth = read('src/utils/clientHealth.js');
+assert.match(clientHealth, /MK_LOGIN_REJECTED/);
+const detailPanelLogin = read('src/components/clients/ClientDetailPanel.jsx');
+assert.match(detailPanelLogin, /credentialsRequest/);

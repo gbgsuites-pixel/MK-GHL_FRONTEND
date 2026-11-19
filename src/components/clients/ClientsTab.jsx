@@ -31,6 +31,14 @@ export default function ClientsTab({
   getClientErrors,
 }) {
   const [selectedClientId, setSelectedClientId] = useState(null);
+  // Open the detail panel straight to the credentials form. The nonce lets a
+  // second click on the same client reopen the form.
+  const [credentialsRequest, setCredentialsRequest] = useState(null);
+  const openLoginUpdate = (client) => {
+    const id = client.id || client.consultantNum;
+    setSelectedClientId(id);
+    setCredentialsRequest({ id, nonce: Date.now() });
+  };
   const selectedClient = useMemo(
     () => clients.find((client) => String(client.id || client.consultantNum) === String(selectedClientId)) || null,
     [clients, selectedClientId]
@@ -135,6 +143,7 @@ export default function ClientsTab({
         onRemove={onRemove}
         onUpdateCredentials={onUpdateCredentials}
         isSyncing={isSyncing}
+        credentialsRequest={credentialsRequest}
         actionBusy={selectedClient ? clientActionId === selectedClient.id : false}
       />
 
@@ -168,6 +177,7 @@ export default function ClientsTab({
               onRemove={onRemove}
               clientActionId={clientActionId}
               onDetails={(client) => setSelectedClientId(client.id || client.consultantNum)}
+              onUpdateLogin={onUpdateCredentials ? openLoginUpdate : undefined}
             />
           );
         })}
