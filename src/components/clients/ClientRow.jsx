@@ -30,13 +30,14 @@ export default function ClientRow({
   // database so a client that synced before does not show "No sync data".
   const saved = client.lastSyncStats || null;
   const hasSaved = Boolean(saved && client.lastSyncAt);
-  const problem = isManaged ? lastSyncProblem(client) : null;
-  const loginFailed = problem?.kind === 'login' && !problem.resolved;
   const status = client.status || getClientStatus(clientStatus);
   const isManaged = Boolean(client.id);
   const isBusy = clientActionId === client.id;
   const isActive = status === 'active';
   const isPaused = status === 'paused';
+  // Declared after isManaged: reading it earlier throws in the browser.
+  const problem = isManaged ? lastSyncProblem(client) : null;
+  const loginFailed = problem?.kind === 'login' && !problem.resolved;
 
   const handleDisconnect = () => {
     if (!window.confirm(`Disable ${client.clientName}? Future scheduled and manual syncs will stop, but the client record will remain available.`)) {
