@@ -25,6 +25,7 @@ export const ENDPOINTS = {
   managedClients: '/api/v1/clients',
   managedClientCreate: '/api/v1/clients',
   managedClientStatus: (id) => `/api/v1/clients/${encodeURIComponent(id)}/status`,
+  managedClientCredentials: (id) => `/api/v1/clients/${encodeURIComponent(id)}/credentials`,
   managedClientValidate: (id) => `/api/v1/clients/${encodeURIComponent(id)}/validate-credentials`,
   managedClientSync: (id) => `/api/v1/clients/${encodeURIComponent(id)}/sync`,
   managedClientDisconnect: (id) => `/api/v1/clients/${encodeURIComponent(id)}`,

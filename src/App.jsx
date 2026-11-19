@@ -19,6 +19,7 @@ import {
   disconnectManagedClient,
   removeManagedClient,
   validateManagedClient,
+  updateManagedClientCredentials,
 } from './services/api';
 
 // ── Constants ──
@@ -222,6 +223,55 @@ export default function App() {
     [connection, appendLog]
   );
 
+  // Save new credentials, then validate immediately so a correct password
+  // returns the client to active without a second click.
+  const handleUpdateCredentials = useCallback(
+    async (client, credentials) => {
+      if (!client?.id) return;
+      setClientActionId(client.id);
+      try {
+        await updateManagedClientCredentials(connection.backendUrl, connection.apiKey, client.id, credentials);
+        appendLog({
+          timestamp: new Date().toISOString(),
+          level: 'info',
+          message: `Credentials updated for ${client.clientName}. Validating…`,
+          consultantNum: client.consultantNum,
+        });
+        try {
+          await validateManagedClient(connection.backendUrl, connection.apiKey, client.id);
+          appendLog({
+            timestamp: new Date().toISOString(),
+            level: 'info',
+            message: `${client.clientName} validated and active.`,
+            consultantNum: client.consultantNum,
+          });
+        } catch (validationError) {
+          appendLog({
+            timestamp: new Date().toISOString(),
+            level: 'error',
+            message: `Credentials saved for ${client.clientName}, but validation failed: ${validationError.message}`,
+            consultantNum: client.consultantNum,
+          });
+          throw new Error(`Saved, but validation failed: ${validationError.message}`);
+        }
+      } catch (error) {
+        if (!/^Saved, but validation failed/.test(error.message)) {
+          appendLog({
+            timestamp: new Date().toISOString(),
+            level: 'error',
+            message: `Could not update credentials for ${client.clientName}: ${error.message}`,
+            consultantNum: client.consultantNum,
+          });
+        }
+        throw error;
+      } finally {
+        await connection.loadClients();
+        setClientActionId(null);
+      }
+    },
+    [connection, appendLog]
+  );
+
   const handleCreateClient = useCallback(
     async (clientInput) => {
       setClientActionId('create');
@@ -350,6 +400,7 @@ export default function App() {
             onValidate={handleValidateClient}
             onCreate={handleCreateClient}
             onRemove={handleRemoveClient}
+            onUpdateCredentials={handleUpdateCredentials}
             clientActionId={clientActionId}
             getClientErrors={sync.getClientErrors}
           />
