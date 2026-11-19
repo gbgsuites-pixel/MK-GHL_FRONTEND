@@ -57,4 +57,10 @@ assert.match(detail, /Contacts last sync/);
 assert.match(detail, /Revalidate GHL fields/);
 assert.match(detail, /protectedFieldWarnings/);
 
+assert.match(detail, /Update credentials/);
+assert.match(detail, /onUpdateCredentials/);
+assert.match(api, /updateManagedClientCredentials/);
+assert.match(app, /onUpdateCredentials={handleUpdateCredentials}/);
+assert.match(clientsTab, /onUpdateCredentials={onUpdateCredentials}/);
+
 console.log('frontend_contract_tests=PASS');

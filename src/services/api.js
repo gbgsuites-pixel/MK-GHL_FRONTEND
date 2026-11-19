@@ -186,6 +186,13 @@ export const removeManagedClient = (baseUrl, apiKey, id) =>
     method: 'DELETE',
   });
 
+export const updateManagedClientCredentials = (baseUrl, apiKey, id, credentials) =>
+  apiCall(baseUrl, apiKey, ENDPOINTS.managedClientCredentials(id), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(credentials),
+  });
+
 export const validateManagedClient = (baseUrl, apiKey, id) =>
   apiCall(baseUrl, apiKey, ENDPOINTS.managedClientValidate(id), { method: 'POST' });
 

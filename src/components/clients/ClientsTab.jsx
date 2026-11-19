@@ -24,6 +24,7 @@ export default function ClientsTab({
   onValidate,
   onCreate,
   onRemove,
+  onUpdateCredentials,
   clientActionId,
   getClientErrors,
 }) {
@@ -90,6 +91,7 @@ export default function ClientsTab({
         onValidate={onValidate}
         onStatusChange={onStatusChange}
         onRemove={onRemove}
+        onUpdateCredentials={onUpdateCredentials}
         actionBusy={selectedClient ? clientActionId === selectedClient.id : false}
       />
 
