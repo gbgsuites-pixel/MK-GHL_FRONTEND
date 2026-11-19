@@ -1,6 +1,7 @@
 import React from 'react';
 import StatusBadge from '../shared/StatusBadge';
 import { getClientStats, getClientStatus } from '../../utils/syncResult';
+import { lastSyncProblem } from '../../utils/clientHealth';
 
 /**
  * Individual client row in the clients list.
@@ -21,6 +22,7 @@ export default function ClientRow({
   onRemove,
   clientActionId,
   onDetails,
+  onUpdateLogin,
 }) {
   const stats = getClientStats(clientStatus);
   // The live status only lists clients the current run has finished, and it
@@ -28,6 +30,8 @@ export default function ClientRow({
   // database so a client that synced before does not show "No sync data".
   const saved = client.lastSyncStats || null;
   const hasSaved = Boolean(saved && client.lastSyncAt);
+  const problem = isManaged ? lastSyncProblem(client) : null;
+  const loginFailed = problem?.kind === 'login' && !problem.resolved;
   const status = client.status || getClientStatus(clientStatus);
   const isManaged = Boolean(client.id);
   const isBusy = clientActionId === client.id;
@@ -62,7 +66,9 @@ export default function ClientRow({
         <div style={{ fontWeight: 600, fontSize: '14px' }}>{client.clientName}</div>
         <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
           {client.consultantNum}
-          {client.validationStatus && client.validationStatus !== 'unknown' && (
+          {loginFailed ? (
+            <span style={{ marginLeft: '8px', color: '#dc2626', fontWeight: 600 }}>login failed</span>
+          ) : client.validationStatus && client.validationStatus !== 'unknown' && (
             <span style={{ marginLeft: '8px', color: client.validationStatus === 'valid' ? '#16a34a' : '#b45309' }}>
               {client.validationStatus === 'valid' ? 'validated' : client.validationStatus}
             </span>
@@ -73,7 +79,15 @@ export default function ClientRow({
       <div><StatusBadge status={status} /></div>
 
       <div style={{ fontSize: '11px', color: '#64748b' }}>
-        {clientStatus ? (
+        {problem && !clientStatus ? (
+          <div title={problem.detail}>
+            <span style={{ color: problem.resolved ? '#16a34a' : problem.kind === 'site' ? '#b45309' : '#dc2626', fontWeight: 600 }}>
+              {problem.label}
+            </span>
+            <br />
+            <span>Last sync {formatSyncDate(client.lastSyncAt)}</span>
+          </div>
+        ) : clientStatus ? (
           <div>
             <span>{stats.mergedContacts} contacts</span><br />
             <span style={{ color: '#16a34a' }}>{stats.ghlSynced} synced</span>
@@ -100,6 +114,16 @@ export default function ClientRow({
         <button onClick={() => onDetails?.(client)} style={buttonStyle('#e0e7ff', false, '#3730a3')} title="View client detail">
           Details
         </button>
+        {isManaged && onUpdateLogin && (
+          <button
+            onClick={() => onUpdateLogin(client)}
+            disabled={isBusy}
+            title="Update this client's Mary Kay password or GHL token"
+            style={loginFailed ? buttonStyle('#dc2626', isBusy) : buttonStyle('#f1f5f9', isBusy, '#475569')}
+          >
+            Update login
+          </button>
+        )}
         <button
           onClick={() => onSync(client.consultantNum)}
           disabled={isSyncing || (isManaged && !isActive)}
