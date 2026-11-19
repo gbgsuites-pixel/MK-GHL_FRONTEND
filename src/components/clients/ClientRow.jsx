@@ -23,6 +23,11 @@ export default function ClientRow({
   onDetails,
 }) {
   const stats = getClientStats(clientStatus);
+  // The live status only lists clients the current run has finished, and it
+  // is empty after a server restart. Fall back to the result saved in the
+  // database so a client that synced before does not show "No sync data".
+  const saved = client.lastSyncStats || null;
+  const hasSaved = Boolean(saved && client.lastSyncAt);
   const status = client.status || getClientStatus(clientStatus);
   const isManaged = Boolean(client.id);
   const isBusy = clientActionId === client.id;
@@ -76,7 +81,19 @@ export default function ClientRow({
               <span style={{ color: '#dc2626', marginLeft: '6px' }}>{stats.ghlErrors} errors</span>
             )}
           </div>
-        ) : <span>No sync data</span>}
+        ) : hasSaved ? (
+          <div title={`Last sync ${formatSyncDate(client.lastSyncAt)} (${client.lastSyncStatus || 'unknown'})`}>
+            <span>{saved.contacts ?? saved.synced ?? 0} contacts</span><br />
+            <span style={{ color: '#16a34a' }}>{saved.synced ?? 0} synced</span>
+            {Number(saved.errors) > 0 && (
+              <span style={{ color: '#dc2626', marginLeft: '6px' }}>{saved.errors} errors</span>
+            )}
+            <br />
+            <span>Last sync {formatSyncDate(client.lastSyncAt)}</span>
+          </div>
+        ) : (
+          <span>{isSyncing && isActive ? 'Waiting for first sync' : 'No sync yet'}</span>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -109,8 +126,13 @@ export default function ClientRow({
         {isManaged && (
           <>
             {(status === 'pending_validation' || status === 'invalid' || client.validationStatus === 'unknown') && (
-              <button onClick={() => onValidate?.(client)} disabled={isBusy} style={buttonStyle('#e0e7ff', isBusy, '#3730a3')}>
-                {isBusy ? 'Checking…' : client.validationStatus === 'unknown' ? 'Validate fields' : 'Validate'}
+              <button
+                onClick={() => onValidate?.(client)}
+                disabled={isBusy || isSyncing}
+                title={isSyncing ? 'A sync is running. Validation is available when it finishes.' : undefined}
+                style={buttonStyle('#e0e7ff', isBusy || isSyncing, '#3730a3')}
+              >
+                {isBusy ? 'Checking…' : isSyncing ? 'Validate after sync' : client.validationStatus === 'unknown' ? 'Validate fields' : 'Validate'}
               </button>
             )}
             {(isActive || isPaused) && (
@@ -149,4 +171,12 @@ function buttonStyle(backgroundColor, disabled, color = 'white') {
     fontWeight: 600,
     opacity: disabled ? 0.55 : 1,
   };
+}
+
+function formatSyncDate(value) {
+  try {
+    return new Date(value).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  } catch (_) {
+    return String(value);
+  }
 }

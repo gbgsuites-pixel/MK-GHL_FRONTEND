@@ -4,7 +4,7 @@ import StatusBadge from '../shared/StatusBadge';
 
 const EMPTY_CREDENTIALS = { password: '', ghlApiToken: '' };
 
-export default function ClientDetailPanel({ client, onClose, onValidate, onStatusChange, onRemove, onUpdateCredentials, actionBusy }) {
+export default function ClientDetailPanel({ client, onClose, onValidate, onStatusChange, onRemove, onUpdateCredentials, actionBusy, isSyncing }) {
   const [showCredentials, setShowCredentials] = useState(false);
   const [credentials, setCredentials] = useState(EMPTY_CREDENTIALS);
   const [credentialError, setCredentialError] = useState('');
@@ -92,8 +92,14 @@ export default function ClientDetailPanel({ client, onClose, onValidate, onStatu
       {isManaged && (
         <div style={{ display: 'flex', gap: '8px', marginTop: '14px', flexWrap: 'wrap' }}>
           {(status === 'pending_validation' || status === 'invalid' || status === 'active') && (
-            <button type="button" onClick={() => onValidate?.(client)} disabled={actionBusy} style={btnSecondary}>
-              {actionBusy ? 'Checking…' : client.validationStatus === 'valid' ? 'Revalidate GHL fields' : 'Validate credentials'}
+            <button
+              type="button"
+              onClick={() => onValidate?.(client)}
+              disabled={actionBusy || isSyncing}
+              title={isSyncing ? 'A sync is running. Validation is available when it finishes.' : undefined}
+              style={btnSecondary}
+            >
+              {actionBusy ? 'Checking…' : isSyncing ? 'Validate after sync finishes' : client.validationStatus === 'valid' ? 'Revalidate GHL fields' : 'Validate credentials'}
             </button>
           )}
           {(status === 'active' || status === 'paused') && (
